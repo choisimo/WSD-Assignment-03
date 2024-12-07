@@ -26,7 +26,7 @@ class PasswordEncoderTest {
             // JSON 파싱하여 비밀번호 리스트 추출
             //JsonNode root = objectMapper.readTree(jsonContent);
             //rawPasswords = objectMapper.convertValue(root.get("passwords"), List.class);
-            rawPasswords = "ogmg verf fkfh cnfq";
+            rawPasswords = "ogmg verf fkfh 5";
         } catch (Exception e) {
             e.printStackTrace();
             return;
