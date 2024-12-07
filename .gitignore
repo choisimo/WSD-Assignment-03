@@ -37,4 +37,4 @@ out/
 .vscode/
 security.json
 test
-JasyptConfigAES
+JasyptConfigAES.java
