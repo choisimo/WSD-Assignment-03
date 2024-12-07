@@ -59,12 +59,6 @@ public class users {
     @Column(name = "is_blocked", nullable = false, columnDefinition = "BIT(1)")
     private boolean isBlocked = false; // 차단 여부 (TRUE이면 차단 상태)
 
-    @Column(nullable = false, insertable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
-    public void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
-
-
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.singleton(new SimpleGrantedAuthority(this.role.getKey()));
     }

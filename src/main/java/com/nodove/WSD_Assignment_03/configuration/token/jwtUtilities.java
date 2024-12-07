@@ -128,7 +128,7 @@ public class jwtUtilities {
     }
 
     // token 전달 시, response에 token을 담아서 전달.
-    public void loginResponse(HttpServletResponse response, tokenDto tokenDto)
+    public void loginResponse(HttpServletResponse response, tokenDto tokenDto, String deviceId)
     {
         Cookie newCookie = new Cookie("refreshToken", tokenDto.getRefreshToken());
         newCookie.setHttpOnly(true);
@@ -137,6 +137,7 @@ public class jwtUtilities {
         response.addCookie(newCookie);
         response.addHeader(securityConstants.TOKEN_HEADER,
                 securityConstants.TOKEN_PREFIX + tokenDto.getAccessToken());
+        response.addHeader(securityConstants.DEVICE_ID, deviceId);
     }
 
 

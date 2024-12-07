@@ -19,8 +19,12 @@ public class principalDetailsService implements UserDetailsService {
     // username 이지만 userId로 변경 (DB에 저장된 userId로 로그인 // username은 중복 가능 값)
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        log.info("username: {} trying to login", username);
         return usersRepository.findByUserId(username)
                 .map(principalDetails::new) // PrincipalDetails 생성자 확인
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> {
+                    log.error("User with userId '{}' not found", username);
+                    return new UsernameNotFoundException("User not found");
+                });
     }
 }

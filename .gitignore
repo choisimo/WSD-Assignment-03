@@ -37,4 +37,4 @@ out/
 .vscode/
 security.json
 test
-JasyptConfigAES.java
+src/main/java/com/nodove/WSD_Assignment_03/configuration/security/JasyptConfigAES.java
