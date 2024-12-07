@@ -29,7 +29,7 @@ public class usersService {
     private final usersRepository usersRepository;
     private final jwtUtilities jwtUtilities;
     private final smtpService emailService;
-    private final Base64PasswordEncoder base64PasswordEncoder;
+    private final Base64PasswordEncoder passwordEncoder;
 
     public boolean isTokenBlackListed(String token) {
         if (redisService.checkBlackList(token)) {
@@ -133,7 +133,7 @@ public class usersService {
 
 
         // 비밀번호 암?호?화 (Base64)
-        String encodedPassword = Base64PasswordEncoder.encode(request.getPassword());
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
 
         // 사용자 생성 및 저장
         users newUser = users.builder()
@@ -188,14 +188,14 @@ public class usersService {
             boolean nicknameChanged = !request.getNickname().equals(user.getNickname());
 
             // password 체크
-            if (!Base64PasswordEncoder.matches(request.getOriginPassword(), user.getPassword())) {
+            if (!passwordEncoder.matches(request.getOriginPassword(), user.getPassword())) {
                 return ResponseEntity.badRequest().body("비밀번호가 일치하지 않습니다.");
             }
 
             // 사용자 정보 업데이트
             users updatedUser = users.builder()
                     .userId(user.getUserId())
-                    .password(Base64PasswordEncoder.encode(request.getNewPassword()))
+                    .password(passwordEncoder.encode(request.getNewPassword()))
                     .email(request.getEmail())
                     .username(request.getUsername())
                     .nickname(request.getNickname())

@@ -3,6 +3,7 @@ package com.nodove.WSD_Assignment_03.configuration.security;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nodove.WSD_Assignment_03.configuration.token.jwtUtilities;
 import com.nodove.WSD_Assignment_03.configuration.token.principalDetails.principalDetailsService;
+import com.nodove.WSD_Assignment_03.configuration.utility.password.Base64PasswordEncoder;
 import com.nodove.WSD_Assignment_03.filter.authenticationFilter;
 import com.nodove.WSD_Assignment_03.filter.authorizationFilter;
 import com.nodove.WSD_Assignment_03.service.redisService;
@@ -19,10 +20,11 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.util.matcher.RequestMatcher;
+
 import org.springframework.web.cors.CorsConfigurationSource;
 
 import java.util.Arrays;
@@ -92,10 +94,12 @@ public class securityConfig {
         return new ObjectMapper();
     }
 
+    // todo : passwordEncoder 변경 필요
     @Bean
-    public BCryptPasswordEncoder bCryptPasswordEncoder() {
-        return new BCryptPasswordEncoder();
+    public PasswordEncoder passwordEncoder() {
+        return NoOpPasswordEncoder.getInstance();
     }
+
 }
 
 

@@ -6,5 +6,5 @@ public class securityConstants {
     public static final String TOKEN_PREFIX = "Bearer ";
     public static final String TOKEN_TYPE = "JWT";
     public static final String TOKEN_TYPE2 = "refreshJWT";
-
+    public static final String DEVICE_ID = "device_id";
 }

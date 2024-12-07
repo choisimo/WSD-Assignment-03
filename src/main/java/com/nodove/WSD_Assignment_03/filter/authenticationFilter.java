@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nodove.WSD_Assignment_03.configuration.token.components.tokenDto;
 import com.nodove.WSD_Assignment_03.configuration.token.jwtUtilities;
 import com.nodove.WSD_Assignment_03.configuration.token.principalDetails.principalDetails;
+import com.nodove.WSD_Assignment_03.configuration.utility.password.Base64PasswordEncoder;
 import com.nodove.WSD_Assignment_03.dto.users.Redis_Refresh;
 import com.nodove.WSD_Assignment_03.dto.users.UserLoginRequest;
 import com.nodove.WSD_Assignment_03.service.redisService;
@@ -45,9 +46,15 @@ public class authenticationFilter extends UsernamePasswordAuthenticationFilter {
 
         try {
             UserLoginRequest userLoginRequest = objectMapper.readValue(request.getInputStream(), UserLoginRequest.class);
-            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userLoginRequest.getUserId(), userLoginRequest.getPassword());
+            String encodedPassword = Base64PasswordEncoder.encode(userLoginRequest.getPassword());
+            log.info("User ID: " + userLoginRequest.getUserId());
+            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userLoginRequest.getUserId(), encodedPassword);
             return authenticationManager.authenticate(authenticationToken);
-        } catch (IOException e) {
+        } catch (AuthenticationException e) {
+            log.error("Authentication Failed");
+            throw new RuntimeException(e);
+        }
+        catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -59,15 +66,16 @@ public class authenticationFilter extends UsernamePasswordAuthenticationFilter {
         principalDetails principalDetails = (principalDetails) authentication.getPrincipal();
         tokenDto newToken = jwtUtilities.generateToken(authentication);
 
+        String deviceId = UUID.randomUUID().toString();
         // redis 에 refresh token 저장
         Redis_Refresh newRedis_refresh = Redis_Refresh.builder()
                 .userId(principalDetails.getUserId())
                 .provider("LOCAL")
-                .deviceId(UUID.randomUUID().toString())
+                .deviceId(deviceId)
                 .build();
         redisService.saveRefreshToken(newRedis_refresh, newToken.getRefreshToken());
 
         // Access Token 을 Header 에 추가
-        jwtUtilities.loginResponse(response, newToken);
+        jwtUtilities.loginResponse(response, newToken, deviceId);
     }
 }
