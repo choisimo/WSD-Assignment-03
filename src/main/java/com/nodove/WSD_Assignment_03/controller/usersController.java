@@ -1,22 +1,23 @@
 package com.nodove.WSD_Assignment_03.controller;
 
 import com.nodove.WSD_Assignment_03.configuration.token.principalDetails.principalDetails;
+import com.nodove.WSD_Assignment_03.dto.users.UserLoginRequest;
+import com.nodove.WSD_Assignment_03.dto.users.UserProfileRequest;
 import com.nodove.WSD_Assignment_03.dto.users.UserRegisterRequest;
 import com.nodove.WSD_Assignment_03.service.usersService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.web.bind.annotation.*;
 
 
 @Slf4j
@@ -57,4 +58,36 @@ public class usersController {
             @RequestBody(required = true) UserRegisterRequest request) {
         return this.usersService.registerUser(request);
     }
+
+
+    @Operation(
+            summary = "프로필 업데이트",
+            description = "사용자의 프로필 정보를 업데이트합니다. 요청 본문에 업데이트할 정보를 포함하여 요청을 보냅니다." +
+                    "이메일 변경 시에는 인증 코드 요청 후 인증 코드를 포함해서 요청해야 합니다."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "프로필 업데이트 성공", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터 | 중복 체크 실패", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "500", description = "서버 오류로 프로필 업데이트 실패", content = @Content(mediaType = "application/json"))
+    })
+    @PutMapping("/auth/profile")
+    public ResponseEntity<?> updateProfile(@AuthenticationPrincipal principalDetails principalDetails,
+                                           @RequestBody @Valid UserProfileRequest request) {
+        return this.usersService.updateProfile(principalDetails, request);
+    }
+
+
+    @Operation(summary = "로그인", description = "ID와 비밀번호를 통해 로그인을 요청합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "로그인 성공", content = @Content),
+            @ApiResponse(responseCode = "401", description = "로그인 실패", content = @Content),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청", content = @Content)
+    })
+    @PostMapping("/auth/login")
+    public void login(@RequestBody UserLoginRequest request, HttpServletResponse response) {
+        log.info("Swagger UI를 통한 로그인 요청");
+        // 로그인은 AuthenticationFilter에서 자동 처리됨. 응답은 필터에 의해 전송됩니다.
+    }
+
 }

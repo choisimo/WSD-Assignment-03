@@ -31,7 +31,7 @@ public class smtpService {
 
 
     // 이메일 중복 확인
-    private boolean checkEmailExists(emailRequest request) {
+    public boolean checkEmailExists(emailRequest request) {
         if (redisService.checkEmailExists(request.getEmail()))
         {
             log.info("이미 존재하는 이메일: {}", request.getEmail());

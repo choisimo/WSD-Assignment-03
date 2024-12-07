@@ -13,4 +13,5 @@ public interface usersRepository extends JpaRepository<users, Long> {
 
     Optional<Object> findByEmail(@Email @NotBlank String email);
 
+    Optional<Object> findByNickname(@NotBlank String nickname);
 }
