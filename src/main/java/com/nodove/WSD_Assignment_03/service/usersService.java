@@ -18,6 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+
 @Slf4j
 @RequiredArgsConstructor
 @Service
@@ -30,12 +32,10 @@ public class usersService {
     private final Base64PasswordEncoder base64PasswordEncoder;
 
     public boolean isTokenBlackListed(String token) {
-
         if (redisService.checkBlackList(token)) {
             log.info("Token is blacklisted");
             return true;
         }
-
         return usersRepository.findByUserId(jwtUtilities.parseToken(token, 0).get("userId").toString())
                 .map(users::isBlocked)
                 .orElse(false);
@@ -43,12 +43,26 @@ public class usersService {
 
 
     public boolean isNicknameExists(String nickname) {
+        if (redisService.isNicknameExists(nickname)) {
+            log.info("Nickname already exists");
+            return true;
+        }
         return usersRepository.findByNickname(nickname).isPresent();
     }
     public boolean isUserIdExists(String userId) {
+        if (redisService.isUserIdExists(userId)) {
+            log.info("User ID already exists");
+            return true;
+        }
         return usersRepository.findByUserId(userId).isPresent();
     }
-
+    public boolean isExistsEmail(String email) {
+        if (redisService.isExistsEmail(email)) {
+            log.info("Email already exists");
+            return true;
+        }
+        return usersRepository.findByEmail(email).isPresent();
+    }
 
     @Transactional
     public ResponseEntity<?> refreshAcessToken(HttpServletRequest request, HttpServletResponse response){
@@ -79,18 +93,44 @@ public class usersService {
 
     @Transactional
     public ResponseEntity<?> registerUser(UserRegisterRequest request) {
-        log.info("회원가입 요청: {}", request.getEmail());
+        log.info("회원가입 요청: {} , {}", request.getUserId(), request.getEmail());
 
         // 중복 사용자 체크
-        if (usersRepository.findByEmail(request.getEmail()).isPresent()) {
+        if (isExistsEmail(request.getEmail())) {
             log.error("이미 존재하는 이메일: {}", request.getEmail());
             return ResponseEntity.badRequest().body("이미 존재하는 이메일입니다.");
         }
 
-        if (usersRepository.findByUserId(request.getUserId()).isPresent()) {
+        // 중복 사용자 체크
+        if (isUserIdExists(request.getUserId())) {
             log.error("이미 존재하는 사용자 ID: {}", request.getUserId());
             return ResponseEntity.badRequest().body("이미 존재하는 사용자 ID입니다.");
         }
+
+        if (isNicknameExists(request.getNickname())) {
+            log.error("이미 존재하는 닉네임: {}", request.getNickname());
+            return ResponseEntity.badRequest().body("이미 존재하는 닉네임입니다.");
+        }
+
+        // 이메일 인증 코드 확인
+        if (request.getEmailVerifyCode() == null) {
+            log.error("이메일 인증 코드가 필요합니다.");
+            return ResponseEntity.badRequest().body("이메일 인증 코드가 필요합니다.");
+        }
+
+        // 이메일 인증 코드 확인
+        String verificationCode = this.redisService.getVerificationCode(request.getEmail());
+        if (verificationCode == null) {
+            log.error("Redis에서 이메일 인증 코드를 찾을 수 없습니다: {}", request.getEmail());
+            return ResponseEntity.badRequest().body("유효하지 않은 이메일 인증 코드입니다. \n " +
+                    "회원가입을 위한 이메일 인증코드가 필요합니다. 먼저 인증 코드 요청을 해주세요.");
+        }
+
+        if (!verificationCode.equals(request.getEmailVerifyCode())) {
+            log.error("이메일 인증 코드가 일치하지 않습니다.");
+            return ResponseEntity.badRequest().body("이메일 인증 코드가 일치하지 않습니다.");
+        }
+
 
         // 비밀번호 암?호?화 (Base64)
         String encodedPassword = Base64PasswordEncoder.encode(request.getPassword());
@@ -103,6 +143,10 @@ public class usersService {
                 .username(request.getUsername())
                 .nickname(request.getNickname())
                 .role(Role.valueOf("USER"))
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .isDeleted(false)
+                .isBlocked(false)
                 .build();
 
         usersRepository.save(newUser);

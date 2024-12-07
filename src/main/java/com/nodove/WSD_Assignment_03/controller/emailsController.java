@@ -26,7 +26,7 @@ public class emailsController {
 
     private final smtpService emailService;
 
-    @Operation(summary="이메일 보내기", description = "이메일 코드 전송 관련")
+    @Operation(summary="회원가입 이메일 보내기", description = "이메일 코드 전송 관련")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "이메일 전송 성공", content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "400", description = "이메일 전송 실패", content = @Content(mediaType = "application/json")),

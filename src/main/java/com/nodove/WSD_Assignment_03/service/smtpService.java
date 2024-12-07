@@ -34,17 +34,21 @@ public class smtpService {
     public boolean checkEmailExists(emailRequest request) {
         if (redisService.checkEmailExists(request.getEmail()))
         {
-            log.info("이미 존재하는 이메일: {}", request.getEmail());
+            log.warn("이미 존재하는 이메일: {}", request.getEmail());
             return true;
         }
         boolean isExists = this.usersRepository.findByEmail(request.getEmail()).isPresent();
 
         if (isExists) {
-            log.info("이미 존재하는 이메일: {}", request.getEmail());
+            log.warn("이미 존재하는 이메일: {}", request.getEmail());
             redisService.saveEmail(request.getEmail());
             return true;
         }
         return false;
+    }
+
+    public void saveEmailVerifyCode(String email, String code) {
+        redisService.saveVerificationCode(email, code);
     }
 
     // 회원가입 인증 메일 전송
@@ -66,6 +70,9 @@ public class smtpService {
             helper.setSubject(subject); // 메일 제목
             helper.setText(text, true); // HTML 형식 메시지
 
+            // 이메일 인증번호 저장
+            saveEmailVerifyCode(request.getEmail(), uuid);
+            // 메일 전송
             javaMailSender.send(mimeMessage);
             log.info("메일 전송 성공: {}", request.getEmail());
         } catch (MessagingException e) {

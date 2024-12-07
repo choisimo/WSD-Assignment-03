@@ -104,5 +104,33 @@ public class redisService {
     public boolean checkBlackList(String token) {
         return redisTemplate.opsForValue().get(redisConstants.BLACKLIST_KEY_PREFIX + token) != null;
     }
+    // 닉네임 중복 체크
+    public boolean isNicknameExists(String nickname) {
+        return redisTemplate.opsForValue().get(redisConstants.USER_NICKNAME_CHECK_PREFIX + nickname) != null;
+    }
+    // 유저 아이디 중복 체크
+    public boolean isUserIdExists(String userId) {
+        return redisTemplate.opsForValue().get(redisConstants.USER_ID_CHECK_PREFIX + userId) != null;
+    }
+    // 이메일 중복 체크
+    public boolean isExistsEmail(String email) {
+        return redisTemplate.opsForValue().get(redisConstants.USER_EMAIL_CHECK_PREFIX + email) != null;
+    }
+    // 유저 블록 확인
+    public boolean isBlocked(String userId) {
+        return redisTemplate.opsForValue().get(redisConstants.USER_BLOCKED_PREFIX + userId) != null;
+    }
+    // 닉네임 중복 체크 저장
+    public void saveNicknameExists(String nickname) {
+        redisTemplate.opsForValue().set(redisConstants.USER_NICKNAME_CHECK_PREFIX + nickname, "true", Duration.ofDays(1)); // 캐시 TTL 설정
+    }
+    // 유저 아이디 중복 체크 저장
+    public void saveUserIdExists(String userId) {
+        redisTemplate.opsForValue().set(redisConstants.USER_ID_CHECK_PREFIX + userId, "true", Duration.ofDays(1)); // 캐시 TTL 설정
+    }
+    // 이메일 중복 체크 저장
+    public void saveBlocked(String userId) {
+        redisTemplate.opsForValue().set(redisConstants.USER_BLOCKED_PREFIX + userId, "true", Duration.ofDays(1)); // 캐시 TTL 설정
+    }
     /* end redis-user*/
 }
