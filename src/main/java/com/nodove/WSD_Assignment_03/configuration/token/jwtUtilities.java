@@ -43,10 +43,9 @@ public class jwtUtilities {
     public jwtUtilities(
             @Value("${jwt.secret-key}") String secretKey,
             @Value("${jwt.secret-key2}") String secretKey2,
-            @Value("${jwt.authorized-key}") String authorizedKey,
             @Value("${ACCESS_TOKEN_VALIDITY}") Long ACCESS_TOKEN_VALIDITY,
             @Value("${REFRESH_TOKEN_VALIDITY}") Long REFRESH_TOKEN_VALIDITY,
-            @Value("${AUTH_TOKEN_VALIDITY}") Long AUTH_TOKEN_VALIDITY, usersRepository usersRepository){
+            usersRepository usersRepository){
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
         this.key2 = Keys.hmacShaKeyFor(secretKey2.getBytes());
         this.ACCESS_TOKEN_VALIDITY = ACCESS_TOKEN_VALIDITY;

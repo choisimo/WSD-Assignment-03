@@ -18,7 +18,7 @@ public class redisService {
     @Value("${email.expire}")
     private long emailExpire;
 
-    @Value("${jwt.REFRESH_TOKEN_VALIDITY}")
+    @Value("${REFRESH_TOKEN_VALIDITY}")
     private long refreshTokenExpire;
 
     private final RedisTemplate<String, String> redisTemplate;

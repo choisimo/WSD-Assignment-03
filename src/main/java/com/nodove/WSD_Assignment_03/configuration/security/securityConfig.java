@@ -49,7 +49,8 @@ public class securityConfig {
 
     private final List<String> permitList = Arrays.asList(
             "/auth/login",
-            "/auth/register"
+            "/auth/register",
+            "/swagger-io.html"
     );
 
     @Bean
@@ -77,10 +78,10 @@ public class securityConfig {
         http.authorizeHttpRequests((authorize) -> {
             authorize.requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll();
             authorize.requestMatchers("/api/public/**").permitAll();
-            authorize.requestMatchers((RequestMatcher) permitList).permitAll();
+            authorize.requestMatchers(permitList.toArray(new String[0])).permitAll();
             authorize.requestMatchers("/api/private/**").hasAnyAuthority("ADMIN");
             authorize.requestMatchers("/api/protected/**").hasAnyAuthority("USER", "COMPANY", "ADMIN");
-            authorize.anyRequest().authenticated();
+            authorize.anyRequest().permitAll();
         });
         return http.build();
     }
