@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -75,11 +76,15 @@ public class jwtUtilities {
 
     private String generateAccessToken(String userId, String nickname, Collection<? extends GrantedAuthority> role)
     {
+        List<String> roles = role.stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList();
+
         return Jwts.builder()
                 .setSubject(userId)
                 .claim("nickname", nickname)
                 .claim("userId", userId)
-                .claim("role", role)
+                .claim("role", roles)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_VALIDITY * 1000))
                 .signWith(key)
@@ -110,13 +115,16 @@ public class jwtUtilities {
             // get the user information from the token.
             String userId = (String) parsedToken.getBody().get("userId", String.class);
             String nickname = (String) parsedToken.getBody().get("nickname", String.class);
-            String role = (String) parsedToken.getBody().get("role", String.class);
-            Role userRole = Role.valueOf(role);
+            List<String> roles = parsedToken.getBody().get("role", List.class);
+
+            List<SimpleGrantedAuthority> authorities = roles.stream()
+                    .map(SimpleGrantedAuthority::new)
+                    .toList();
 
             users user = users.builder()
                     .userId(userId)
                     .nickname(nickname)
-                    .role(userRole)
+                    .role(Role.USER)
                     .build();
 
             UserDetails userDetails = new principalDetails(user);

@@ -14,6 +14,11 @@ public class SwaggerConfig {
 
     @Bean
     public OpenAPI customOpenAPI() {
+        SecurityScheme cookieAuthScheme = new SecurityScheme()
+                .type(SecurityScheme.Type.APIKEY) // Cookie 기반 인증은 API Key로 정의
+                .in(SecurityScheme.In.COOKIE)    // 쿠키로 전달
+                .name("refreshToken");           // 쿠키 이름
+
         // Security Scheme 설정
         final String securitySchemeName = "bearerAuth";
         return new OpenAPI()
