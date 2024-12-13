@@ -146,6 +146,7 @@ public class jwtUtilities {
         response.addHeader(securityConstants.TOKEN_HEADER,
                 securityConstants.TOKEN_PREFIX + tokenDto.getAccessToken());
         response.addHeader(securityConstants.DEVICE_ID, deviceId);
+        response.addHeader("refreshToken", tokenDto.getRefreshToken());
     }
 
 

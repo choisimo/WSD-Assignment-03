@@ -14,25 +14,33 @@ public class SwaggerConfig {
 
     @Bean
     public OpenAPI customOpenAPI() {
-        SecurityScheme cookieAuthScheme = new SecurityScheme()
-                .type(SecurityScheme.Type.APIKEY) // Cookie 기반 인증은 API Key로 정의
-                .in(SecurityScheme.In.COOKIE)    // 쿠키로 전달
-                .name("refreshToken");           // 쿠키 이름
+        // Bearer Token 인증
+        final String bearerAuthScheme = "bearerAuth";
+        SecurityScheme bearerScheme = new SecurityScheme()
+                .name(bearerAuthScheme)
+                .type(SecurityScheme.Type.HTTP)
+                .scheme("bearer")
+                .bearerFormat("JWT");
+
+        // Cookie 인증
+        final String cookieAuthScheme = "cookieAuth";
+        SecurityScheme cookieScheme = new SecurityScheme()
+                .type(SecurityScheme.Type.APIKEY)
+                .in(SecurityScheme.In.COOKIE)
+                .name("refreshToken"); // 쿠키 이름과 일치해야 함
 
         // Security Scheme 설정
         final String securitySchemeName = "bearerAuth";
         return new OpenAPI()
-                .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
+                .addSecurityItem(new SecurityRequirement()
+                        .addList(cookieAuthScheme)
+                        .addList(securitySchemeName))
                 .components(new Components()
-                        .addSecuritySchemes(securitySchemeName,
-                                new SecurityScheme()
-                                        .name(securitySchemeName)
-                                        .type(SecurityScheme.Type.HTTP)
-                                        .scheme("bearer")
-                                        .bearerFormat("JWT")))
+                        .addSecuritySchemes(bearerAuthScheme, bearerScheme) // Bearer 인증 스키마 추가
+                        .addSecuritySchemes(cookieAuthScheme, cookieScheme)) // Cookie 인증 스키마 추가
                 .info(new Info()
                         .title("API Documentation")
                         .version("1.0")
-                        .description("API for your application"));
+                        .description("API documentation for the application."));
     }
 }
