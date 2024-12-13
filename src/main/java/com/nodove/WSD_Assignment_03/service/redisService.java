@@ -133,4 +133,20 @@ public class redisService {
         redisTemplate.opsForValue().set(redisConstants.USER_BLOCKED_PREFIX + userId, "true", Duration.ofDays(1)); // 캐시 TTL 설정
     }
     /* end redis-user*/
+
+
+    /* start redis-Crawler-company */
+    // 회사명 저장
+    public void saveCompanyName(String companyName) {
+        redisTemplate.opsForValue().set(redisConstants.COMPANY_NAME_KEY_PREFIX + companyName, "true", Duration.ofDays(1)); // 캐시 TTL 설정
+    }
+    // 회사명 중복 체크
+    public boolean isCompanyNameExists(String companyName) {
+        return redisTemplate.opsForValue().get(redisConstants.COMPANY_NAME_KEY_PREFIX + companyName) != null;
+    }
+    // 회사명 삭제
+    public Boolean deleteCompanyName(String companyName) {
+        return redisTemplate.delete(redisConstants.COMPANY_NAME_KEY_PREFIX + companyName);
+    }
+    /* end redis-Crawler-company */
 }

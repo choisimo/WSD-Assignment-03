@@ -1,26 +1,32 @@
 package com.nodove.WSD_Assignment_03.domain.JobKorea;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-import static jakarta.persistence.GenerationType.*;
 
 @Entity
+@Table(name ="`company`")
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Company {
 
     @Id
-    @GeneratedValue(strategy = IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;        // 회사 이름
-    private String industry;    // 산업 분야
-    private String website;     // 회사 웹사이트
-    private String description; // 회사 설명
+    @Column(length = 100, nullable = false)
+    private String name;
 
-    @OneToMany(mappedBy = "company")
-    private List<JobPosting> jobPostings; // 해당 회사의 채용 공고
+    @Column(name = "location" ,length = 200)
+    private String location;
 
+    @OneToMany(mappedBy = "company", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<JobPosting> jobPostings;
 }

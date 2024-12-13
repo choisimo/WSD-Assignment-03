@@ -14,6 +14,8 @@ public class WsdAssignment03Application {
 		SpringApplication.run(WsdAssignment03Application.class, args);
 	}
 
+	// @PostConstruct 설명
+	// 초기화 메서드란 스프링 빈이 생성된 후 별도의 초기화 작업을 위해 실행하는 메서드
 	@PostConstruct
 	void set_time_zone() {
 		TimeZone.setDefault(TimeZone.getTimeZone("Asia/Seoul"));

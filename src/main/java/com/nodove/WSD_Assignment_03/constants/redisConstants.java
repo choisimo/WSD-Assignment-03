@@ -9,4 +9,5 @@ public class redisConstants {
     public static final String USER_ID_CHECK_PREFIX = "user_id_check:";
     public static final String USER_EMAIL_CHECK_PREFIX = "user_email_check:";
     public static final String USER_BLOCKED_PREFIX = "user_blocked:";
+    public static final String COMPANY_NAME_KEY_PREFIX = "company_name:";
 }
