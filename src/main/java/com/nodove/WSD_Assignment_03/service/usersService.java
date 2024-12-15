@@ -15,6 +15,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.coyote.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -220,6 +221,42 @@ public class usersService {
             return ResponseEntity.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
                     .body("프로필 업데이트에 실패했습니다.");
         }
+    }
+
+    @Transactional
+    public ResponseEntity<?> withdrawUser(principalDetails principalDetails) {
+        if (principalDetails == null) {
+            return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
+                    .body("로그인이 필요합니다.");
+        }
+        try {
+            log.info("회원탈퇴 요청: {}", principalDetails.getUserId());
+
+            users user = usersRepository.findByUserId(principalDetails.getUserId()).orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+            if (redisService.isUserIdExists(user.getUserId())) {
+                redisService.deleteUserIdExists(user.getUserId());
+            }
+
+            if (redisService.isExistsEmail(user.getEmail())) {
+                redisService.deleteEmailExists(user.getEmail());
+            }
+
+            if (redisService.isNicknameExists(user.getNickname())) {
+                redisService.deleteNicknameExists(user.getNickname());
+            }
+
+            // 사용자 삭제
+            user.setDeleted(true);
+            usersRepository.save(user);
+
+            log.info("회원탈퇴 성공: {}", user.getUserId());
+        } catch (Exception e) {
+            log.error("회원탈퇴 실패: {}", e.getMessage());
+            return ResponseEntity.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
+                    .body("회원탈퇴에 실패했습니다.");
+        }
+        return ResponseEntity.ok("회원탈퇴 성공");
     }
 
 }

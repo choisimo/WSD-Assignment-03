@@ -1,5 +1,6 @@
-package com.nodove.WSD_Assignment_03.domain.JobKorea;
+package com.nodove.WSD_Assignment_03.domain.SaramIn;
 
+import com.nodove.WSD_Assignment_03.domain.users;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,7 +22,7 @@ public class UserBookmark {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    private JobUser user;
+    private users user;
 
     @ManyToOne
     @JoinColumn(name = "job_posting_id", nullable = false)
@@ -29,6 +30,7 @@ public class UserBookmark {
 
     private String note; // 사용자가 추가할 수 있는 메모 (Optional)
 
+    @Builder.Default
     // 북마크한 날짜 (Optional)
     private LocalDate bookmarkedAt = LocalDate.now(); // 북마크한 날짜 (Optional)
 

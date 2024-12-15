@@ -44,18 +44,22 @@ public class users {
     @Column(nullable = false, length = 10)
     private Role role; // 사용자 역할 (ADMIN, USER, COMPANY)
 
+    @Builder.Default
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now(); // 계정 생성 시간
 
+    @Builder.Default
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt = LocalDateTime.now(); // 계정 수정 시간
 
     @Column(name = "deleted_at", nullable = true)
     private LocalDateTime deletedAt; // 삭제 시간 (NULL이면 활성 상태)
 
+    @Builder.Default
     @Column(name = "is_deleted", nullable = false, columnDefinition = "BIT(1)")
     private boolean isDeleted = false; // 삭제 여부 (TRUE이면 삭제 상태)
 
+    @Builder.Default
     @Column(name = "is_blocked", nullable = false, columnDefinition = "BIT(1)")
     private boolean isBlocked = false; // 차단 여부 (TRUE이면 차단 상태)
 

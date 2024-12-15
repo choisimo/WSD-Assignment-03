@@ -116,6 +116,18 @@ public class redisService {
     public boolean isExistsEmail(String email) {
         return redisTemplate.opsForValue().get(redisConstants.USER_EMAIL_CHECK_PREFIX + email) != null;
     }
+    // 닉네임 중복 삭제
+    public Boolean deleteNicknameExists(String nickname) {
+        return redisTemplate.delete(redisConstants.USER_NICKNAME_CHECK_PREFIX + nickname);
+    }
+    // 유저 아이디 중복 삭제
+    public Boolean deleteUserIdExists(String userId) {
+        return redisTemplate.delete(redisConstants.USER_ID_CHECK_PREFIX + userId);
+    }
+    // 이메일 중복 삭제
+    public Boolean deleteEmailExists(String email) {
+        return redisTemplate.delete(redisConstants.USER_EMAIL_CHECK_PREFIX + email);
+    }
     // 유저 블록 확인
     public boolean isBlocked(String userId) {
         return redisTemplate.opsForValue().get(redisConstants.USER_BLOCKED_PREFIX + userId) != null;

@@ -57,12 +57,13 @@ public class JobCrawler {
 
                 for (Element job : jobElements) {
                     try {
-                        String company = job.select(".corp_name a").text().strip();
-                        String title = job.select(".job_tit a").text().strip();
-                        String link = "https://www.saramin.co.kr" + job.select(".job_tit a").attr("href").strip();
                         Elements conditions = job.select(".job_condition span");
 
-                        String location = conditions.size() > 0 ? conditions.get(0).text().strip() : "";
+                        String companyName = job.select(".corp_name a").text().strip();
+                        String title = job.select(".job_tit a").text().strip();
+                        String link = "https://www.saramin.co.kr" + job.select(".job_tit a").attr("href").strip();
+                        String logo = job.select(".logo img").attr("src").strip();
+                        String location = !conditions.isEmpty() ? conditions.get(0).text().strip() : "";
                         String experience = conditions.size() > 1 ? conditions.get(1).text().strip() : "";
                         String education = conditions.size() > 2 ? conditions.get(2).text().strip() : "";
                         String employmentType = conditions.size() > 3 ? conditions.get(3).text().strip() : "";
@@ -72,8 +73,9 @@ public class JobCrawler {
 
                         JobPostingsDto jobPostingsDto = JobPostingsDto.builder()
                                 .title(title)
-                                .companyName(company)
+                                .companyName(companyName)
                                 .location(location)
+                                .logo(logo)
                                 .experience(experience)
                                 .education(education)
                                 .employmentType(employmentType)
@@ -82,8 +84,6 @@ public class JobCrawler {
                                 .sector(sector)
                                 .link(link)
                                 .build();
-
-                        log.info("Crawled Job - {}", jobPostingsDto);
 
                         // Save data via CrawlerService
                         crawlerService.saveJobPosting(jobPostingsDto);

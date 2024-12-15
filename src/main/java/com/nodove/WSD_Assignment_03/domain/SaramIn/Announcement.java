@@ -1,4 +1,4 @@
-package com.nodove.WSD_Assignment_03.domain.JobKorea;
+package com.nodove.WSD_Assignment_03.domain.SaramIn;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -6,7 +6,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "`announcements`")
+@Table(name = "`announcement`")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -23,12 +23,15 @@ public class Announcement {
     @Column(columnDefinition = "TEXT", nullable = false)
     private String content; // 공지 내용
 
+    @Builder.Default
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now(); // 작성 시간
+
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt; // 수정 시간
 
+    @Builder.Default
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true; // 공지 활성화 여부
 }

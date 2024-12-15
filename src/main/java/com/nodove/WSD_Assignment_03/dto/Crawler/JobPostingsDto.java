@@ -6,6 +6,7 @@ import lombok.Data;
 @Data
 @Builder
 public class JobPostingsDto {
+    private long id;
     private String title;
     private String companyName;
     private String location;
@@ -16,4 +17,7 @@ public class JobPostingsDto {
     private String salary;
     private String sector;
     private String link;
+    private String logo;
+    private String postedAt;
+    private int viewCount;
 }

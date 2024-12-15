@@ -1,4 +1,4 @@
-package com.nodove.WSD_Assignment_03.domain.JobKorea;
+package com.nodove.WSD_Assignment_03.domain.SaramIn;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

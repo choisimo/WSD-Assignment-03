@@ -90,4 +90,14 @@ public class usersController {
         // 로그인은 AuthenticationFilter에서 자동 처리됨. 응답은 필터에 의해 전송됩니다.
     }
 
+    @Operation(summary = "회원 탈퇴", description = "회원 탈퇴를 요청합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "회원 탈퇴 성공", content = @Content),
+            @ApiResponse(responseCode = "401", description = "인증되지 않은 사용자", content = @Content),
+            @ApiResponse(responseCode = "500", description = "서버 오류로 회원 탈퇴 실패", content = @Content)
+    })
+    @DeleteMapping("/auth/withdraw")
+    public ResponseEntity<?> withdrawUser(@AuthenticationPrincipal principalDetails principalDetails) {
+        return this.usersService.withdrawUser(principalDetails);
+    }
 }

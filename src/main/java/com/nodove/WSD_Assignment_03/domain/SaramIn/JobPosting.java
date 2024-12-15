@@ -1,4 +1,4 @@
-package com.nodove.WSD_Assignment_03.domain.JobKorea;
+package com.nodove.WSD_Assignment_03.domain.SaramIn;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -6,9 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @Table(name = "`JobPosting`")
@@ -39,6 +37,24 @@ public class JobPosting {
 
     @Column(length = 50)
     private String employmentType;
+
+    @Column(length = 50)
+    private String experience; // 경력
+
+    @Column(length = 100)
+    private String education; // 학력 요구 사항
+
+    @Column(length = 500)
+    private String sector; // 분야/섹터
+
+    @Column(length = 500)
+    private String link; // 공고 링크
+
+    @Column(length = 500)
+    private String logo; // 회사 로고 URL
+
+    @Column(length = 100)
+    private String deadline; // 마감일
 
     @Builder.Default
     @Column(name = "posted_at")

@@ -1,7 +1,7 @@
 package com.nodove.WSD_Assignment_03.service;
 
-import com.nodove.WSD_Assignment_03.domain.JobKorea.Company;
-import com.nodove.WSD_Assignment_03.domain.JobKorea.JobPosting;
+import com.nodove.WSD_Assignment_03.domain.SaramIn.Company;
+import com.nodove.WSD_Assignment_03.domain.SaramIn.JobPosting;
 import com.nodove.WSD_Assignment_03.dto.Crawler.JobPostingsDto;
 import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.CompanyRepository;
 import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.JobPostingRepository;
@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
