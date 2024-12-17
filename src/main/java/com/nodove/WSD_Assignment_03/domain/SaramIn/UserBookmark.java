@@ -16,15 +16,16 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Builder
 public class UserBookmark {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
+    @ManyToOne // 북마크한 사용자
     @JoinColumn(name = "user_id", nullable = false)
     private users user;
 
-    @ManyToOne
+    @ManyToOne // 북마크한 공고
     @JoinColumn(name = "job_posting_id", nullable = false)
     private JobPosting jobPosting;
 

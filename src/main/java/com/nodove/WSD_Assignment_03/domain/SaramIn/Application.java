@@ -32,5 +32,11 @@ public class Application {
     @JoinColumn(name="job_posting_id", nullable = false)
     private JobPosting jobPosting; // 지원한 공고
 
+    @Builder.Default
+    @Column(name = "status", length = 50, nullable = false)
+    private StatusEnum status = StatusEnum.PENDING; // 지원 상태 (Optional)
+
+    @Column(name = "note", length = 500, nullable = true)
+    private String note; // 사용자가 추가할 수 있는 메모 (Optional)
 
 }
