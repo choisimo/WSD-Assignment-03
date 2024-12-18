@@ -9,6 +9,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -143,6 +144,10 @@ public class redisService {
     // 이메일 중복 체크 저장
     public void saveBlocked(String userId) {
         redisTemplate.opsForValue().set(redisConstants.USER_BLOCKED_PREFIX + userId, "true", Duration.ofDays(1)); // 캐시 TTL 설정
+    }
+    // 유저 로그인 기록 저장
+    public void saveUserLogin(String userId) {
+        redisTemplate.opsForValue().set(redisConstants.USER_LOGIN_PREFIX + userId, String.valueOf(LocalDateTime.now()), Duration.ofDays(1)); // 캐시 TTL 설정
     }
     /* end redis-user*/
 

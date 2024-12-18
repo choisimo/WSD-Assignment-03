@@ -1,15 +1,12 @@
-package com.nodove.WSD_Assignment_03.repository.CrawlerRepository;
+package com.nodove.WSD_Assignment_03.repository.CrawlerRepository.JobPosting;
 
 import com.nodove.WSD_Assignment_03.domain.SaramIn.Company;
 import com.nodove.WSD_Assignment_03.domain.SaramIn.JobPosting;
-import io.lettuce.core.dynamic.annotation.Param;
+import jakarta.persistence.EntityManager;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Query;
 
-import java.awt.print.Pageable;
-import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 public interface JobPostingRepository extends JpaRepository<JobPosting, Long> {
 
@@ -18,4 +15,5 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Long> {
     Optional<JobPosting> findByTitleAndCompanyName(String title, String company);
 
 
+    Supplier<EntityManager> getEntityManager();
 }

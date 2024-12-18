@@ -4,7 +4,7 @@ import com.nodove.WSD_Assignment_03.domain.SaramIn.Company;
 import com.nodove.WSD_Assignment_03.domain.SaramIn.JobPosting;
 import com.nodove.WSD_Assignment_03.dto.Crawler.JobPostingsDto;
 import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.CompanyRepository;
-import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.JobPostingRepository;
+import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.JobPosting.JobPostingRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

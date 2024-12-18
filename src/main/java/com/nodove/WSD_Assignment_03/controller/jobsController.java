@@ -1,6 +1,7 @@
 package com.nodove.WSD_Assignment_03.controller;
 
 import com.nodove.WSD_Assignment_03.configuration.token.principalDetails.principalDetails;
+import com.nodove.WSD_Assignment_03.dto.Crawler.JobPostingUpdateDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.JobPostingsDto;
 import com.nodove.WSD_Assignment_03.service.jobsService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,6 +11,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +24,7 @@ public class jobsController {
 
     private final jobsService jobService;
 
-    @Operation(summary = "Create Job Posting", description = "Creates a new job posting.")
+    @Operation(summary = "채용 공고 등록", description = "Creates a new job posting.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Job Posting Created", content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "400", description = "Unauthorized", content = @Content(mediaType = "application/json"))
@@ -36,7 +38,9 @@ public class jobsController {
         return ResponseEntity.ok("Job Posting Created");
     }
 
-    @Operation(summary = "Get Job Postings", description = "Retrieves a list of job postings with optional filters.")
+
+    
+    @Operation(summary = "채용 공고 필터링", description = "Retrieves a list of job postings with optional filters.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Job Postings Retrieved", content = @Content(mediaType = "application/json"))
     })
@@ -60,13 +64,24 @@ public class jobsController {
         return ResponseEntity.ok(jobListings);
     }
 
-    @Operation(summary = "Get Job Posting", description = "Retrieves the details of a specific job posting by ID.")
+    @Operation(summary = "채용 공고 상세 조회", description = "상세 정보 제공, 조회수 증가, 관련 공고 추천")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Job Posting Retrieved", content = @Content(mediaType = "application/json"))
     })
     @GetMapping("/{id}")
-    public ResponseEntity<?> getJobPosting(@PathVariable long id) {
-        JobPostingsDto jobPostDetail = jobService.getJobPosting(id);
+    public ResponseEntity<?> getJobPosting(@AuthenticationPrincipal principalDetails principalDetails, @PathVariable long id, HttpRequest request) {
+        JobPostingsDto jobPostDetail = jobService.getJobPosting(principalDetails, id, request);
         return ResponseEntity.ok(jobPostDetail);
+    }
+
+    @Operation(summary = "공고 수정하기", description = "Updates the details of a specific job posting by ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Job Posting Updated", content = @Content(mediaType = "application/json")),
+            @ApiResponse (responseCode = "400", description = "Unauthorized", content = @Content(mediaType = "application/json")),
+            @ApiResponse (responseCode = "404", description = "Job Posting not found", content = @Content(mediaType = "application/json"))
+    })
+    @PutMapping
+    public ResponseEntity<?> updateJobPosting(@AuthenticationPrincipal principalDetails principalDetails, @RequestBody JobPostingUpdateDto jobPostingsUpdateDto) {
+        return this.jobService.updateJobPosting(principalDetails, jobPostingsUpdateDto);
     }
 }

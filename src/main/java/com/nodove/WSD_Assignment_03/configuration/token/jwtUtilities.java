@@ -6,6 +6,7 @@ import com.nodove.WSD_Assignment_03.constants.securityConstants;
 import com.nodove.WSD_Assignment_03.domain.Role;
 import com.nodove.WSD_Assignment_03.domain.users;
 import com.nodove.WSD_Assignment_03.repository.usersRepository;
+import com.nodove.WSD_Assignment_03.service.redisService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jws;
@@ -41,17 +42,20 @@ public class jwtUtilities {
     private final Long ACCESS_TOKEN_VALIDITY;
     private final Long REFRESH_TOKEN_VALIDITY;
 
+    private final redisService redisService;
+
     public jwtUtilities(
             @Value("${jwt.secret-key}") String secretKey,
             @Value("${jwt.secret-key2}") String secretKey2,
             @Value("${ACCESS_TOKEN_VALIDITY}") Long ACCESS_TOKEN_VALIDITY,
             @Value("${REFRESH_TOKEN_VALIDITY}") Long REFRESH_TOKEN_VALIDITY,
-            usersRepository usersRepository){
+            usersRepository usersRepository, redisService redisService){
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
         this.key2 = Keys.hmacShaKeyFor(secretKey2.getBytes());
         this.ACCESS_TOKEN_VALIDITY = ACCESS_TOKEN_VALIDITY;
         this.REFRESH_TOKEN_VALIDITY = REFRESH_TOKEN_VALIDITY;
         this.usersRepository = usersRepository;
+        this.redisService = redisService;
     }
 
     public tokenDto generateToken(Authentication authentication)
@@ -70,7 +74,11 @@ public class jwtUtilities {
 
     public String generateAccessToken(String userId)
     {
-        users user = usersRepository.findByUserId(userId).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+        // userId 기반으로 사용자 조회, 사용자 존재 시 로그인 기록 등록
+        users user = usersRepository.findByUserId(userId).map(action -> {
+        this.redisService.saveUserLogin(userId);
+        return action;
+    }).orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
         return generateAccessToken(user.getUserId(), user.getNickname(), user.getAuthorities());
     }
 
