@@ -11,6 +11,8 @@ import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.Bookmark.BookMa
 import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.JobPosting.JobPostingRepository;
 import com.querydsl.core.QueryFactory;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +32,8 @@ public class bookMarkService {
     private final BookMarkRepository bookMarkRepository;
     private final JobPostingRepository jobPostingRepository;
 
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Transactional
     public ResponseEntity<?> searchBookmarks(BookmarkSearchRequestDto bookmarkSearchRequestDto, principalDetails principalDetails) {
@@ -38,23 +42,11 @@ public class bookMarkService {
             return ResponseEntity.status(401).body("Unauthorized");
         }
 
-        // QueryDSL 사용하여 필터링 된 북마크 리스트 조회
-        QUserBookmark qUserBookmark = QUserBookmark.userBookmark;
-        // JPAQueryFactory를 사용하여 QueryDSL을 사용할 수 있도록 설정
-        JPAQueryFactory queryFactory = new JPAQueryFactory(bookMarkRepository.getEntityManager());
+        // 사용자 ID 조회
+        Long userId = principalDetails.getUser().getId();
 
-        // keyword, location, experience, salary, sector 으로 추천 목록 조회
-        List<UserBookmark> filteredBookmarks = queryFactory.selectFrom(qUserBookmark)
-                .where(qUserBookmark.user.eq(principalDetails.getUser())
-                        .and(qUserBookmark.jobPosting.title.contains(bookmarkSearchRequestDto.getKeyword())
-                                .or(qUserBookmark.jobPosting.company.name.contains(bookmarkSearchRequestDto.getKeyword()))
-                                .or(qUserBookmark.jobPosting.location.contains(bookmarkSearchRequestDto.getLocation()))
-                                .or(qUserBookmark.jobPosting.experience.contains(bookmarkSearchRequestDto.getExperience()))
-                                .or(qUserBookmark.jobPosting.salary.contains(bookmarkSearchRequestDto.getSalary()))
-                                .or(qUserBookmark.jobPosting.sector.contains(bookmarkSearchRequestDto.getSector()))
-                                .or(qUserBookmark.note.contains(bookmarkSearchRequestDto.getNote())))
-                )
-                .fetch();
+        // QueryDSL 사용하여 동적 쿼리 실행하기 위해 BookMarkRepository에서 searchUserBookmarks 메소드 호출
+        List<UserBookmark> filteredBookmarks = bookMarkRepository.searchUserBookmarks(userId, bookmarkSearchRequestDto);
 
         // 필터링 된 북마크 리스트를 BookmarkResponseDto로 변환
         List<BookmarkResponseDto> response = filteredBookmarks.stream()
@@ -65,7 +57,7 @@ public class bookMarkService {
                         .location(bookmark.getJobPosting().getLocation())
                         .experience(bookmark.getJobPosting().getExperience())
                         .salary(bookmark.getJobPosting().getSalary())
-                        .sector(Collections.singletonList(bookmark.getJobPosting().getSector()))
+                        .sector(Collections.singletonList(String.valueOf(bookmark.getJobPosting().getSectorNames())))
                         .note(bookmark.getNote())
                         .build())
                 .collect(Collectors.toList());

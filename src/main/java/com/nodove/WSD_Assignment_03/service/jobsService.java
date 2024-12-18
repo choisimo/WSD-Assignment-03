@@ -1,13 +1,13 @@
 package com.nodove.WSD_Assignment_03.service;
 
 import com.nodove.WSD_Assignment_03.configuration.token.principalDetails.principalDetails;
-import com.nodove.WSD_Assignment_03.domain.SaramIn.JobPosting;
-import com.nodove.WSD_Assignment_03.domain.SaramIn.QJobPosting;
-import com.nodove.WSD_Assignment_03.domain.SaramIn.userViewPage;
+import com.nodove.WSD_Assignment_03.domain.SaramIn.*;
 import com.nodove.WSD_Assignment_03.dto.Crawler.JobPostingUpdateDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.JobPostingsDto;
 import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.CompanyRepository;
 import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.JobPosting.JobPostingRepository;
+import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.JobPosting.JobPostingSectorRepository;
+import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.JobPosting.SectorRepository;
 import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.JobPosting.userViewPageRepository;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -34,6 +34,8 @@ public class jobsService {
     private final JPAQueryFactory queryFactory;
     private final CompanyRepository companyRepository;
     private final userViewPageRepository userViewPageRepository;
+    private final JobPostingSectorRepository jobPostingSectorRepository;
+    private final SectorRepository sectorRepository;
 
     @Transactional
     public void createJobPosting(JobPostingsDto jobPostingsDto) {
@@ -52,6 +54,8 @@ public class jobsService {
         if (!principalDetails.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
             throw new IllegalArgumentException("You are not authorized to delete this job posting [ADMIN ONLY]");
         }
+
+        jobPostingSectorRepository.deleteByJobPosting(jobPosting);
         jobPostingRepository.delete(jobPosting);
     }
 
@@ -82,6 +86,9 @@ public class jobsService {
                             }
                     );
         }
+
+        // 섹터 업데이트
+        updateSectors(jobPosting, jobPostingsUpdateDto.getSector());
         // 업데이트
         JobPosting updatedJobPosting = JobPosting.builder()
                 .id(jobPostingsUpdateDto.getId())
@@ -92,7 +99,6 @@ public class jobsService {
                 .education(jobPostingsUpdateDto.getEducation())
                 .employmentType(jobPostingsUpdateDto.getEmploymentType())
                 .salary(jobPostingsUpdateDto.getSalary())
-                .sector(jobPostingsUpdateDto.getSector())
                 .deadline(jobPostingsUpdateDto.getDeadline())
                 .logo(jobPostingsUpdateDto.getLogo())
                 .build();
@@ -137,7 +143,9 @@ public class jobsService {
             builder.and(qJobPosting.employmentType.eq(employmentType));
         }
         if (sector != null) {
-            builder.and(qJobPosting.sector.containsIgnoreCase(sector));
+/*
+            builder.and(qJobPosting.sectors.any().name.containsIgnoreCase(sector)); // 섹터 조건 수정
+*/
         }
         if (deadline != null) {
             builder.and(qJobPosting.deadline.eq(deadline));
@@ -181,7 +189,7 @@ public class jobsService {
                 .education(jobPosting.getEducation())
                 .employmentType(jobPosting.getEmploymentType())
                 .salary(jobPosting.getSalary())
-                .sector(jobPosting.getSector())
+                .sector(String.valueOf(jobPosting.getSectorNames()))
                 .deadline(jobPosting.getDeadline())
                 .logo(jobPosting.getLogo())
                 .postedAt(String.valueOf(jobPosting.getPostedAt()))
@@ -231,6 +239,26 @@ public class jobsService {
         return results.stream()
                 .map(this::convertToDto)
                 .toList();
+    }
+
+
+    private void updateSectors(JobPosting jobPosting, List<String> sectorNames) {
+        // 기존 섹터 관계 삭제
+        jobPostingSectorRepository.deleteByJobPosting(jobPosting);
+
+        // 새로운 섹터 저장 및 관계 추가
+        for (String sectorName : sectorNames) {
+            Sector sector = sectorRepository.findByName(sectorName)
+                    .orElseGet(() -> sectorRepository.save(Sector.builder().name(sectorName).build()));
+
+            JobPosting_Sector jobPostingSector = JobPosting_Sector.builder()
+                    .jobPosting(jobPosting)
+                    .sector(sector)
+                    .build();
+
+            jobPostingSectorRepository.save(jobPostingSector);
+            log.info("Linked Job Posting with Sector: Title={}, Sector={}", jobPosting.getTitle(), sectorName);
+        }
     }
 
 }

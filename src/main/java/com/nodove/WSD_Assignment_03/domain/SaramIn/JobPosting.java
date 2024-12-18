@@ -7,6 +7,9 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "`JobPosting`")
@@ -44,8 +47,9 @@ public class JobPosting {
     @Column(length = 100)
     private String education; // 학력 요구 사항
 
-    @Column(length = 500)
-    private String sector; // 분야/섹터
+    @Builder.Default
+    @OneToMany(mappedBy = "jobPosting", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<JobPosting_Sector> sectors = new ArrayList<>();
 
     @Column(length = 500)
     private String link; // 공고 링크
@@ -64,6 +68,11 @@ public class JobPosting {
     @Column(name = "view_count", nullable = false)
     private int viewCount = 0;
 
+    public List<String> getSectorNames() {
+        return this.sectors.stream()
+                .map(jobPostingSector -> jobPostingSector.getSector().getName())
+                .collect(Collectors.toList());
+    }
 
 
 }

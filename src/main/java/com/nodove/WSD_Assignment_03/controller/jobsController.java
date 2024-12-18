@@ -1,8 +1,10 @@
 package com.nodove.WSD_Assignment_03.controller;
 
+import com.nodove.WSD_Assignment_03.Crawler.customSearchingCrawler;
 import com.nodove.WSD_Assignment_03.configuration.token.principalDetails.principalDetails;
 import com.nodove.WSD_Assignment_03.dto.Crawler.JobPostingUpdateDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.JobPostingsDto;
+import com.nodove.WSD_Assignment_03.dto.Crawler.crawlingData;
 import com.nodove.WSD_Assignment_03.service.jobsService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 public class jobsController {
 
     private final jobsService jobService;
+    private final customSearchingCrawler customSearchingCrawler;
 
     @Operation(summary = "채용 공고 등록", description = "Creates a new job posting.")
     @ApiResponses(value = {
@@ -83,5 +86,19 @@ public class jobsController {
     @PutMapping
     public ResponseEntity<?> updateJobPosting(@AuthenticationPrincipal principalDetails principalDetails, @RequestBody JobPostingUpdateDto jobPostingsUpdateDto) {
         return this.jobService.updateJobPosting(principalDetails, jobPostingsUpdateDto);
+    }
+
+
+    @Operation(summary = "job Crawler", description = "Crawls job postings from a specific website.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Job Postings Retrieved", content = @Content(mediaType = "application/json"))
+    })
+    @PostMapping("/CustomJobCrawling")
+    public ResponseEntity<?> CustomJobCrawling(@RequestBody(required = true) crawlingData requestData) {
+        if (requestData == null) {
+            return ResponseEntity.badRequest().body("Request Data is null");
+        }
+        customSearchingCrawler.customSearchingCrawling(requestData.getKeywords(), requestData.getTotalPage());
+        return ResponseEntity.ok("Job Crawling Completed");
     }
 }

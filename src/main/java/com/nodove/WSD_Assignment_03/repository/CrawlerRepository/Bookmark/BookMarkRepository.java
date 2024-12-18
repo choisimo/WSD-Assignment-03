@@ -11,12 +11,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-public interface BookMarkRepository extends JpaRepository<UserBookmark, Long>{
+public interface BookMarkRepository extends JpaRepository<UserBookmark, Long>, BookMarkCustomRepository{
 
     Optional<UserBookmark> findByUserAndJobPostingId(users user, Long jobPostingId);
-    Object findByUser(users user);
+    List<UserBookmark> findByUser(users user);
 
-    List<UserBookmark> searchUserBookmarks(Long userId, BookmarkSearchRequestDto requestDto);
-
-    Supplier<EntityManager> getEntityManager();
 }

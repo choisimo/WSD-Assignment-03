@@ -7,7 +7,5 @@ import java.util.List;
 
 public interface userViewPageRepository extends JpaRepository<userViewPage, Long> {
     List<userViewPage> findByUserId(Long userId);
-    List<userViewPage> findByUserIdAndJobPostingId(Long userId, Long jobPostingId);
-    void deleteByUserIdAndJobPostingId(Long userId, Long jobPostingId);
     void deleteByUserId(Long userId);
 }

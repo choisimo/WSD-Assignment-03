@@ -4,6 +4,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Builder;
 import lombok.Data;
 
+import java.util.List;
+
 @Data
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL) // null 값은 반환하지 않음
@@ -17,7 +19,7 @@ public class JobPostingUpdateDto {
     private String education;
     private String employmentType;
     private String salary;
-    private String sector;
+    private List<String> sector;
     private String link;
     private String logo;
     private String postedAt;

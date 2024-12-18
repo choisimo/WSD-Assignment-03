@@ -22,5 +22,6 @@ public class JobPostingsDto {
     private String logo;
     private String postedAt;
     private int viewCount;
+    @Builder.Default
     private List<JobPostingsDto> recommendedJobPostings = null;
 }

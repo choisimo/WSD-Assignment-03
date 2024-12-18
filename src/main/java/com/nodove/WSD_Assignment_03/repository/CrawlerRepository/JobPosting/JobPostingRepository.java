@@ -12,8 +12,4 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Long> {
 
     Optional<JobPosting> findByTitleAndCompany(String title, Company company);
 
-    Optional<JobPosting> findByTitleAndCompanyName(String title, String company);
-
-
-    Supplier<EntityManager> getEntityManager();
 }
