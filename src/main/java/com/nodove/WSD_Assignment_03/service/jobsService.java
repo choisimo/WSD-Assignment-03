@@ -189,7 +189,6 @@ public class jobsService {
                 .education(jobPosting.getEducation())
                 .employmentType(jobPosting.getEmploymentType())
                 .salary(jobPosting.getSalary())
-                .sector(String.valueOf(jobPosting.getSectorNames()))
                 .deadline(jobPosting.getDeadline())
                 .logo(jobPosting.getLogo())
                 .postedAt(String.valueOf(jobPosting.getPostedAt()))

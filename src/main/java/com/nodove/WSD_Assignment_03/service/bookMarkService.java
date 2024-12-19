@@ -57,7 +57,6 @@ public class bookMarkService {
                         .location(bookmark.getJobPosting().getLocation())
                         .experience(bookmark.getJobPosting().getExperience())
                         .salary(bookmark.getJobPosting().getSalary())
-                        .sector(Collections.singletonList(String.valueOf(bookmark.getJobPosting().getSectorNames())))
                         .note(bookmark.getNote())
                         .build())
                 .collect(Collectors.toList());

@@ -43,20 +43,26 @@ public class CrawlerService {
         String education = jobPostingsDto.getEducation();
         String deadline = jobPostingsDto.getDeadline();
         List<String> sectors = List.of(jobPostingsDto.getSector().split(","));
+        Company company;
 
-        // 회사 이름 캐싱 확인 및 저장
-        Company company = companyRepository.findByName(companyName)
-                .orElseGet(() -> {
-                    if (!redisService.isCompanyNameExists(companyName)) {
-                        redisService.saveCompanyName(companyName);
-                        log.info("Company name cached: {}", companyName);
-                    }
-                    Company newCompany = Company.builder()
-                            .name(companyName)
-                            .location(location)
-                            .build();
-                    return companyRepository.save(newCompany);
-                });
+        try {
+            // 회사 이름 캐싱 확인 및 저장
+            company = companyRepository.findByName(companyName)
+                    .orElseGet(() -> {
+                        if (!redisService.isCompanyNameExists(companyName)) {
+                            redisService.saveCompanyName(companyName);
+                            log.info("Company name cached: {}", companyName);
+                        }
+                        Company newCompany = Company.builder()
+                                .name(companyName)
+                                .location(location)
+                                .build();
+                        return companyRepository.save(newCompany);
+                    });
+        } catch (Exception e) {
+            log.error("Failed to save company: {}", companyName);
+            return;
+        }
 
         // 채용 공고 중복 확인
         Optional<JobPosting> existingJobPostingOpt = jobPostingRepository.findByTitleAndCompany(title, company);
@@ -84,9 +90,8 @@ public class CrawlerService {
             jobPostingRepository.save(jobPosting);
             log.info("Saved new Job Posting: Title={}, Company={}", title, companyName);
         }
-
-        // 섹터 저장 및 관계 설정
         saveSectors(jobPosting, sectors);
+        // 섹터 저장 및 관계 설정
     }
 
 
