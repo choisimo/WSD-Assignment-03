@@ -47,7 +47,6 @@ public class jobsService {
     }
 
 
-    @Transactional
     public void deleteJobPosting(principalDetails principalDetails, long id) {
         JobPosting jobPosting = jobPostingRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("JobPosting not found"));

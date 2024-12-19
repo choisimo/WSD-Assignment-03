@@ -4,6 +4,7 @@ import com.nodove.WSD_Assignment_03.dto.Crawler.JobPostingsDto;
 import com.nodove.WSD_Assignment_03.service.CrawlerService;
 import com.nodove.WSD_Assignment_03.service.redisService;
 import jakarta.annotation.PostConstruct;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
@@ -27,7 +28,7 @@ public class JobCrawler {
     private final CrawlerService crawlerService;
 
     // @PostConstruct 어노테이션을 사용하여 스프링 빈이 생성된 후에 해당 메소드가 실행 되도록 함
-    @PostConstruct
+    @PostConstruct @Transactional
     public void startCrawling() {
         log.info("Starting Saramin crawling...");
 
