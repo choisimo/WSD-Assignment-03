@@ -29,15 +29,13 @@ public class SwaggerConfig {
                 .in(SecurityScheme.In.COOKIE)
                 .name("refreshToken"); // 쿠키 이름과 일치해야 함
 
-        // Security Scheme 설정
-        final String securitySchemeName = "bearerAuth";
         return new OpenAPI()
                 .addSecurityItem(new SecurityRequirement()
-                        .addList(cookieAuthScheme)
-                        .addList(securitySchemeName))
+                        .addList(bearerAuthScheme) // Bearer 인증
+                        .addList(cookieAuthScheme)) // Cookie 인증 추가
                 .components(new Components()
-                        .addSecuritySchemes(bearerAuthScheme, bearerScheme) // Bearer 인증 스키마 추가
-                        .addSecuritySchemes(cookieAuthScheme, cookieScheme)) // Cookie 인증 스키마 추가
+                        .addSecuritySchemes(bearerAuthScheme, bearerScheme)
+                        .addSecuritySchemes(cookieAuthScheme, cookieScheme))
                 .info(new Info()
                         .title("API Documentation")
                         .version("1.0")

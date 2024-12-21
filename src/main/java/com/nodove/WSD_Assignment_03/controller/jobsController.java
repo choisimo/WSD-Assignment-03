@@ -2,11 +2,13 @@ package com.nodove.WSD_Assignment_03.controller;
 
 import com.nodove.WSD_Assignment_03.Crawler.customSearchingCrawler;
 import com.nodove.WSD_Assignment_03.configuration.token.principalDetails.principalDetails;
+import com.nodove.WSD_Assignment_03.dto.Crawler.JobPostingRequestDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.JobPostingUpdateDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.JobPostingsDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.crawlingData;
 import com.nodove.WSD_Assignment_03.service.jobsService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -43,27 +45,66 @@ public class jobsController {
 
 
     
-    @Operation(summary = "채용 공고 필터링", description = "Retrieves a list of job postings with optional filters.")
+    @Operation(summary = "공고 목록 조회", description = "Retrieves a list of job postings with optional filters.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Job Postings Retrieved", content = @Content(mediaType = "application/json"))
     })
     @GetMapping
     public ResponseEntity<?> getJobPostings(
+            @Parameter(description = "페이지 번호 (기본값: 0)", example = "1")
             @RequestParam(defaultValue = "0") int page,
+
+            @Parameter(description = "페이지 크기 (기본값: 20)", example = "20")
             @RequestParam(defaultValue = "20") int size,
+
+            @Parameter(description = "지역 필터", example = "서울")
             @RequestParam(required = false) String location,
+
+            @Parameter(description = "경력 필터", example = "신입")
             @RequestParam(required = false) String experience,
+
+            @Parameter(description = "급여 필터", example = "3000만원 이상")
             @RequestParam(required = false) String salary,
+
+            @Parameter(description = "회사명 필터", example = "삼성전자")
             @RequestParam(required = false) String companyName,
+
+            @Parameter(description = "고용 유형 필터", example = "정규직")
             @RequestParam(required = false) String employmentType,
+
+            @Parameter(description = "섹터 필터", example = "IT/소프트웨어")
             @RequestParam(required = false) String sector,
+
+            @Parameter(description = "마감일 필터", example = "2024-12-31")
             @RequestParam(required = false) String deadline,
+
+            @Parameter(description = "검색 키워드 (제목 또는 회사명에 포함된 텍스트)", example = "백엔드 개발자")
+            @RequestParam(required = false) String keyword,
+
+            @Parameter(description = "정렬 기준 (기본값: postedAt)", example = "viewCount")
             @RequestParam(defaultValue = "postedAt") String sortBy,
+
+            @Parameter(description = "정렬 순서 (asc 또는 desc, 기본값: desc)", example = "asc")
             @RequestParam(defaultValue = "desc") String order
+
     ) {
-        Page<JobPostingsDto> jobListings = jobService.getJobListings(
-                page, size, location, experience, salary, companyName, employmentType, sector, deadline, sortBy, order
-        );
+        JobPostingRequestDto jobPostingRequestDto = JobPostingRequestDto.builder()
+                .page(page)
+                .size(size)
+                .location(location)
+                .experience(experience)
+                .salary(salary)
+                .companyName(companyName)
+                .employmentType(employmentType)
+                .sector(sector)
+                .deadline(deadline)
+                .keyword(keyword)
+                .sortBy(sortBy)
+                .order(order)
+                .build();
+
+
+        Page<JobPostingsDto> jobListings = jobService.getJobListings(jobPostingRequestDto);
         return ResponseEntity.ok(jobListings);
     }
 

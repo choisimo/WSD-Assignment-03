@@ -2,6 +2,7 @@ package com.nodove.WSD_Assignment_03.service;
 
 import com.nodove.WSD_Assignment_03.configuration.token.principalDetails.principalDetails;
 import com.nodove.WSD_Assignment_03.domain.SaramIn.*;
+import com.nodove.WSD_Assignment_03.dto.Crawler.JobPostingRequestDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.JobPostingUpdateDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.JobPostingsDto;
 import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.CompanyRepository;
@@ -109,72 +110,75 @@ public class jobsService {
 
 
     @Transactional
-    public Page<JobPostingsDto> getJobListings(
-            int page,
-            int size,
-            String location,
-            String experience,
-            String salary,
-            String companyName,
-            String employmentType,
-            String sector,
-            String deadline,
-            String sortBy,
-            String order
-    ) {
+    public Page<JobPostingsDto> getJobListings(JobPostingRequestDto requestDto) {
         QJobPosting qJobPosting = QJobPosting.jobPosting;
-
-        // 동적 조건 생성
         BooleanBuilder builder = new BooleanBuilder();
-        if (location != null) {
-            builder.and(qJobPosting.location.eq(location));
-        }
-        if (experience != null) {
-            builder.and(qJobPosting.experience.eq(experience));
-        }
-        if (salary != null) {
-            builder.and(qJobPosting.salary.eq(salary));
-        }
-        if (companyName != null) {
-            builder.and(qJobPosting.company.name.eq(companyName));
-        }
-        if (employmentType != null) {
-            builder.and(qJobPosting.employmentType.eq(employmentType));
-        }
-        if (sector != null) {
+
+        if (requestDto.getLocation() != null)
+            builder.and(qJobPosting.location.containsIgnoreCase(requestDto.getLocation()));
+        if (requestDto.getExperience() != null)
+            builder.and(qJobPosting.experience.containsIgnoreCase(requestDto.getExperience()));
+        if (requestDto.getSalary() != null)
+            builder.and(qJobPosting.salary.containsIgnoreCase(requestDto.getSalary()));
+        if (requestDto.getCompanyName() != null)
+            builder.and(qJobPosting.company.name.containsIgnoreCase(requestDto.getCompanyName()));
+        if (requestDto.getEmploymentType() != null)
+            builder.and(qJobPosting.employmentType.containsIgnoreCase(requestDto.getEmploymentType()));
 /*
-            builder.and(qJobPosting.sectors.any().name.containsIgnoreCase(sector)); // 섹터 조건 수정
+        if (requestDto.getSector() != null)
+            builder.and(qJobPosting.sector.containsIgnoreCase(requestDto.getSector()));
 */
+        if (requestDto.getDeadline() != null)
+            builder.and(qJobPosting.deadline.eq(requestDto.getDeadline()));
+
+        // 통합 키워드 검색
+        if (requestDto.getKeyword() != null) {
+            builder.and(
+                    qJobPosting.title.containsIgnoreCase(requestDto.getKeyword())
+                            .or(qJobPosting.company.name.containsIgnoreCase(requestDto.getKeyword()))
+                            .or(qJobPosting.location.containsIgnoreCase(requestDto.getKeyword()))
+                            .or(qJobPosting.description.containsIgnoreCase(requestDto.getKeyword()))
+                            .or(qJobPosting.employmentType.containsIgnoreCase(requestDto.getKeyword()))
+                            .or(qJobPosting.experience.containsIgnoreCase(requestDto.getKeyword()))
+                            .or(qJobPosting.education.containsIgnoreCase(requestDto.getKeyword()))
+                            .or(qJobPosting.salary.containsIgnoreCase(requestDto.getKeyword())
+                            /*.or(qJobPosting.sector.containsIgnoreCase(requestDto.getKeyword())))*/
+                            .or(qJobPosting.deadline.containsIgnoreCase(requestDto.getKeyword()))
+            );
         }
-        if (deadline != null) {
-            builder.and(qJobPosting.deadline.eq(deadline));
-        }
-        if (companyName != null) {
-            builder.and(qJobPosting.company.name.eq(companyName));
-        }
+
+
+
+        // 페이징 및 정렬
+        int page = requestDto.getPage();
+        int size = requestDto.getSize();
+        String order = requestDto.getOrder();
+        String sortBy = requestDto.getSortBy();
 
         Pageable pageable = PageRequest.of(page, size);
 
+        // 데이터 조회
         List<JobPosting> results = queryFactory.selectFrom(qJobPosting)
                 .where(builder)
-                .orderBy(order.equalsIgnoreCase(sortBy != null ? sortBy : "desc") ?
+                .orderBy(sortBy != null && sortBy.equals("desc") ?
                         qJobPosting.postedAt.desc() :
                         qJobPosting.postedAt.asc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
+        // 총 개수 조회
         long total = queryFactory.selectFrom(qJobPosting)
                 .where(builder)
                 .fetchCount();
 
-        // JobPosting → JobListingDto 매핑
+        // DTO 변환
         List<JobPostingsDto> dtoResults = results.stream()
                 .map(this::convertToDto)
                 .toList();
 
-
         return new PageImpl<>(dtoResults, pageable, total);
+
     }
 
 

@@ -6,6 +6,7 @@ import com.nodove.WSD_Assignment_03.configuration.utility.password.Base64Passwor
 import com.nodove.WSD_Assignment_03.constants.securityConstants;
 import com.nodove.WSD_Assignment_03.domain.Role;
 import com.nodove.WSD_Assignment_03.domain.users;
+import com.nodove.WSD_Assignment_03.dto.users.UserLoginRequest;
 import com.nodove.WSD_Assignment_03.dto.users.UserProfileRequest;
 import com.nodove.WSD_Assignment_03.dto.users.UserRegisterRequest;
 import com.nodove.WSD_Assignment_03.dto.users.emailRequest;
@@ -16,10 +17,12 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.coyote.Response;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -70,7 +73,8 @@ public class usersService {
 
         try {
             String refreshToken = jwtUtilities.getRefreshToken(request);
-            if (refreshToken == null || jwtUtilities.isTokenExpired(refreshToken, 1)) {
+
+            if (jwtUtilities.isTokenExpired(refreshToken, 1)) {
                 log.error("Refresh Token is invalid or expired");
                 return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
                         .body("Refresh Token is invalid or expired. Please log in again.");
@@ -78,6 +82,13 @@ public class usersService {
 
             String userId = jwtUtilities.parseToken(refreshToken, 1).get("userId").toString();
             String newAccessToken = jwtUtilities.generateAccessToken(userId);
+
+/*
+            // Extract expiration times
+            Date oldTokenExpiration = jwtUtilities.parseToken(refreshToken, 1).getExpiration();
+            Date newTokenExpiration = jwtUtilities.parseToken(newAccessToken, 0).getExpiration();
+
+*/
 
             log.info("Access Token reissued successfully for userId: {}", userId);
             response.setHeader(securityConstants.TOKEN_HEADER, securityConstants.TOKEN_PREFIX + newAccessToken);
@@ -162,6 +173,7 @@ public class usersService {
         try {
             log.info("프로필 업데이트 요청: {}", principalDetails.getUserId());
 
+            // 사용자 정보 조회
             users user = usersRepository.findByUserId(principalDetails.getUserId()).orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
             if (request.getEmail() != null && request.getEmailVerificationCode() != null) {
@@ -174,42 +186,50 @@ public class usersService {
 
                 // email 인증 코드 확인
                 if (this.redisService.getVerificationCode(request.getEmail()).equals(request.getEmailVerificationCode())) {
-                    this.redisService.deleteVerificationCode(request.getEmail());
+                    redisService.deleteVerificationCode(request.getEmail());
+                    user.setEmail(request.getEmail());
                 } else {
                     return ResponseEntity.badRequest().body("이메일 인증 코드가 일치하지 않습니다.");
                 }
             }
 
-            // 닉네임 중복 체크
-            if (isNicknameExists(request.getNickname()))
-            {
-                return ResponseEntity.badRequest().body("이미 존재하는 닉네임입니다.");
+
+            // 닉네임 변경 처리
+            if (request.getNickname() != null && !request.getNickname().equals(user.getNickname())) {
+                if (isNicknameExists(request.getNickname())) {
+                    return ResponseEntity.badRequest().body("이미 존재하는 닉네임입니다.");
+                }
+                user.setNickname(request.getNickname());
             }
 
-            boolean nicknameChanged = !request.getNickname().equals(user.getNickname());
+            // 비밀번호 변경 처리
+            if (request.getOriginPassword() != null && request.getNewPassword() != null) {
+                // 기존 비밀번호 확인
+                if (!passwordEncoder.matches(request.getOriginPassword(), user.getPassword())) {
+                    return ResponseEntity.badRequest().body("기존 비밀번호가 일치하지 않습니다.");
+                }
 
-            // password 체크
-            if (!passwordEncoder.matches(request.getOriginPassword(), user.getPassword())) {
-                return ResponseEntity.badRequest().body("비밀번호가 일치하지 않습니다.");
+                // 새 비밀번호가 기존 비밀번호와 동일하지 않은 경우에만 업데이트
+                if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+                    return ResponseEntity.badRequest().body("새 비밀번호가 기존 비밀번호와 동일합니다.");
+                }
+
+                // 비밀번호 업데이트
+                user.setPassword(passwordEncoder.encode(request.getNewPassword()));
             }
 
-            // 사용자 정보 업데이트
-            users updatedUser = users.builder()
-                    .userId(user.getUserId())
-                    .password(passwordEncoder.encode(request.getNewPassword()))
-                    .email(request.getEmail())
-                    .username(request.getUsername())
-                    .nickname(request.getNickname())
-                    .role(user.getRole())
-                    .build();
+            // 이름 변경 처리
+            if (!user.getUsername().equals(request.getUsername())) {
+                user.setUsername(request.getUsername());
+            }
 
-            // 사용자 정보 업데이트
-            usersRepository.save(updatedUser);
+            // 업데이트된 엔터티 저장
+            usersRepository.save(user);
 
-            // 닉네임 변경으로 인한 새로운 Access Token 발급 (닉네임 변경 시에만)
-            if (nicknameChanged) {
-                log.info("닉네임 변경으로 인한 새로운 Access Token 발급: {}", updatedUser.getUserId());
-                String newAccessToken = jwtUtilities.generateAccessToken(updatedUser.getUserId());
+
+            // 닉네임 변경 시 새로운 토큰 발급
+            if (!principalDetails.getUser().getNickname().equals(request.getNickname())) {
+                String newAccessToken = jwtUtilities.generateAccessToken(user.getUserId());
                 return ResponseEntity.ok()
                         .header(securityConstants.TOKEN_HEADER, securityConstants.TOKEN_PREFIX + newAccessToken)
                         .body("프로필 업데이트 성공");
@@ -218,8 +238,7 @@ public class usersService {
             return ResponseEntity.ok("프로필 업데이트 성공");
         } catch (Exception e) {
             log.error("프로필 업데이트 실패: {}", e.getMessage());
-            return ResponseEntity.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
-                    .body("프로필 업데이트에 실패했습니다.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("프로필 업데이트에 실패했습니다.");
         }
     }
 
@@ -259,4 +278,7 @@ public class usersService {
         return ResponseEntity.ok("회원탈퇴 성공");
     }
 
+    public users getUser(String userId) {
+        return usersRepository.findByUserId(userId).orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+    }
 }

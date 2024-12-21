@@ -7,10 +7,7 @@ import com.nodove.WSD_Assignment_03.domain.Role;
 import com.nodove.WSD_Assignment_03.domain.users;
 import com.nodove.WSD_Assignment_03.repository.usersRepository;
 import com.nodove.WSD_Assignment_03.service.redisService;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.ExpiredJwtException;
-import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -147,8 +144,8 @@ public class jwtUtilities {
     public void loginResponse(HttpServletResponse response, tokenDto tokenDto, String deviceId)
     {
         Cookie newCookie = new Cookie("refreshToken", tokenDto.getRefreshToken());
-        newCookie.setHttpOnly(true);
-        newCookie.setDomain(cookieDomain);
+        newCookie.setHttpOnly(false); // TODO : Http-only 으로 수정 | secure 설정
+        newCookie.setDomain(null); // TODO : domain 설정  | test 하느라 null 설정함
         newCookie.setPath("/");
         response.addCookie(newCookie);
         response.addHeader(securityConstants.TOKEN_HEADER,
@@ -182,31 +179,48 @@ public class jwtUtilities {
 
 
     // type 0: access token, type 1: refresh token
-    public boolean isTokenExpired(String token, int type)
-    {
+    public boolean isTokenExpired(String token, int type) {
         Key key = (type == 0) ? this.key : this.key2;
+
         try {
+            // 토큰 유효성 검사
             Jwts.parserBuilder()
                     .setSigningKey(key)
                     .build()
                     .parseClaimsJws(token);
-            return false;
-        } catch (ExpiredJwtException e){
-            return true;
+            return false; // 토큰 유효
+        } catch (ExpiredJwtException e) {
+            log.warn("Token expired: {}", e.getMessage());
+            return true; // 토큰 만료
+        } catch (UnsupportedJwtException e) {
+            log.error("Unsupported JWT token: {}", e.getMessage());
+            throw new IllegalArgumentException("지원되지 않는 JWT 토큰 형식입니다.", e);
+        } catch (MalformedJwtException e) {
+            log.error("Malformed JWT token: {}", e.getMessage());
+            throw new IllegalArgumentException("잘못된 JWT 토큰 형식입니다.", e);
+        } catch (SignatureException e) {
+            log.error("Invalid JWT signature: {}", e.getMessage());
+            throw new IllegalArgumentException("JWT 서명이 유효하지 않습니다.", e);
+        } catch (IllegalArgumentException e) {
+            log.error("Illegal argument for JWT parsing: {}", e.getMessage());
+            throw new IllegalArgumentException("JWT 처리 중 잘못된 인수가 전달되었습니다.", e);
+        } catch (Exception e) {
+            log.error("Unknown error during JWT parsing: {}", e.getMessage());
+            throw new RuntimeException("JWT 처리 중 알 수 없는 오류가 발생했습니다.", e);
         }
     }
 
-    public String getRefreshToken(HttpServletRequest request){
-        Cookie[] cookies = request.getCookies();
-        if (cookies == null) return null;
 
-        for (Cookie cookie : cookies) {
-            if (cookie.getName().equals("refreshToken")) {
-                return cookie.getValue();
+    public String getRefreshToken(HttpServletRequest request) {
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                log.info("cookie name: {}", cookie.getName());
+                if ("refreshToken".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
             }
         }
-        return null;
+        return null; // 쿠키에서 refreshToken을 찾지 못한 경우
     }
-
 
 }

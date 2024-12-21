@@ -4,9 +4,11 @@ import com.nodove.WSD_Assignment_03.configuration.token.principalDetails.princip
 import com.nodove.WSD_Assignment_03.domain.SaramIn.Application;
 import com.nodove.WSD_Assignment_03.domain.SaramIn.JobPosting;
 import com.nodove.WSD_Assignment_03.domain.SaramIn.StatusEnum;
+import com.nodove.WSD_Assignment_03.domain.users;
 import com.nodove.WSD_Assignment_03.dto.Crawler.ApplicationsDto;
 import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.ApplicationRepository;
 import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.JobPosting.JobPostingRepository;
+import com.nodove.WSD_Assignment_03.repository.usersRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,12 +31,18 @@ public class ApplicationsService {
 
     private final JobPostingRepository jobPostingRepository;
     private final ApplicationRepository applicationRepository;
+    private final usersRepository usersRepository;
+    private final usersService usersService;
 
     @Transactional
     public ResponseEntity<?> getApplicationList(principalDetails principalDetails, StatusEnum status, String sortedBy, int pageSize, int pageNumber) {
 
         if (pageSize == 0 || pageNumber == 0) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("pageSize or page is null");
+        }
+
+        if (principalDetails == null || principalDetails.getUserId() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized access");
         }
 
         Sort sort = Sort.by(Sort.Direction.DESC, "appliedAt");
@@ -71,9 +79,15 @@ public class ApplicationsService {
 
     @Transactional
     public ResponseEntity<?> setApplication(principalDetails principalDetails, ApplicationsDto requestDto) {
+
+        // 영속화된 User 객체 가져오기
+        users user = usersRepository.findById(principalDetails.getUser().getId())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        log.info("User: {}", user);
+
         // Check if user is blocked
-        if (principalDetails.getUser().isBlocked())
-        {
+        if (user.isBlocked()) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are blocked from applying to job postings");
         }
 
@@ -104,12 +118,16 @@ public class ApplicationsService {
     public ResponseEntity<?> deleteApplication(principalDetails principalDetails, long id) {
         Application application = applicationRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Application not found"));
-        if (principalDetails.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_USER"))) {
-            throw new IllegalArgumentException("You are not authorized to delete this application [at least USER permission required]");
+
+        if (principalDetails.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN") || a.getAuthority().equals("ROLE_USER"))) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not authorized to delete this application");
         }
+
+        // Check if the application belongs to the user
         if (!Objects.equals(application.getUser().getId(), principalDetails.getUser().getId())) {
-            throw new IllegalArgumentException("You are not authorized to delete this application [USER MISMATCH]");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("You are not authorized to delete this application");
         }
+
         try {
             applicationRepository.delete(application);
             return ResponseEntity.status(HttpStatus.OK).body("Application deleted successfully");

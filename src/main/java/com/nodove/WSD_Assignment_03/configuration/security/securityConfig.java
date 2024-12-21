@@ -7,6 +7,7 @@ import com.nodove.WSD_Assignment_03.configuration.utility.password.Base64Passwor
 import com.nodove.WSD_Assignment_03.filter.authenticationFilter;
 import com.nodove.WSD_Assignment_03.filter.authorizationFilter;
 import com.nodove.WSD_Assignment_03.service.redisService;
+import com.nodove.WSD_Assignment_03.service.userLoginHistoryService;
 import com.nodove.WSD_Assignment_03.service.usersService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,7 @@ public class securityConfig {
     private final jwtUtilities jwtUtilities;
     private final redisService redisService;
     private final usersService usersService;
+    private final userLoginHistoryService userLoginHistoryService;
 
     @Value("${site.domain}")
     private String domain;
@@ -75,7 +77,7 @@ public class securityConfig {
                 management.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
         //filter
         http.addFilterBefore(new authorizationFilter(jwtUtilities, objectMapper(), redisService, usersService), UsernamePasswordAuthenticationFilter.class);
-        http.addFilterAt(new authenticationFilter(authenticationManager(), this.jwtUtilities, objectMapper(), redisService), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterAt(new authenticationFilter(authenticationManager(), this.jwtUtilities, objectMapper(), redisService, userLoginHistoryService), UsernamePasswordAuthenticationFilter.class);
 
         http.authorizeHttpRequests((authorize) -> {
             authorize.requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll();

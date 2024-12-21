@@ -28,7 +28,7 @@ public class JobCrawler {
     private final CrawlerService crawlerService;
 
     // @PostConstruct 어노테이션을 사용하여 스프링 빈이 생성된 후에 해당 메소드가 실행 되도록 함
-    @PostConstruct @Transactional
+    /*@PostConstruct*/ @Transactional
     public void startCrawling() {
         log.info("Starting Saramin crawling...");
 

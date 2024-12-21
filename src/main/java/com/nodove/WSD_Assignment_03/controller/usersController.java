@@ -4,6 +4,7 @@ import com.nodove.WSD_Assignment_03.configuration.token.principalDetails.princip
 import com.nodove.WSD_Assignment_03.dto.users.UserLoginRequest;
 import com.nodove.WSD_Assignment_03.dto.users.UserProfileRequest;
 import com.nodove.WSD_Assignment_03.dto.users.UserRegisterRequest;
+import com.nodove.WSD_Assignment_03.service.userLoginHistoryService;
 import com.nodove.WSD_Assignment_03.service.usersService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -85,7 +86,7 @@ public class usersController {
             @ApiResponse(responseCode = "400", description = "잘못된 요청", content = @Content)
     })
     @PostMapping("/auth/login")
-    public void login(@RequestBody UserLoginRequest request, HttpServletResponse response) {
+    public void login(@RequestBody UserLoginRequest LoginRequest, HttpServletRequest request, HttpServletResponse response) {
         log.info("Swagger UI를 통한 로그인 요청");
         // 로그인은 AuthenticationFilter에서 자동 처리됨. 응답은 필터에 의해 전송됩니다.
     }

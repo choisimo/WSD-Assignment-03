@@ -8,7 +8,9 @@ import com.nodove.WSD_Assignment_03.configuration.utility.password.Base64Passwor
 import com.nodove.WSD_Assignment_03.dto.users.Redis_Refresh;
 import com.nodove.WSD_Assignment_03.dto.users.UserLoginRequest;
 import com.nodove.WSD_Assignment_03.service.redisService;
+import com.nodove.WSD_Assignment_03.service.userLoginHistoryService;
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -17,9 +19,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 public class authenticationFilter extends UsernamePasswordAuthenticationFilter {
@@ -28,13 +33,17 @@ public class authenticationFilter extends UsernamePasswordAuthenticationFilter {
     private final jwtUtilities jwtUtilities;
     private final ObjectMapper objectMapper;
     private final redisService redisService;
+    private final userLoginHistoryService userLoginHistoryService;
 
-    public authenticationFilter(AuthenticationManager authenticationManager, jwtUtilities jwtUtilities, ObjectMapper objectMapper, redisService redisService) {
+    private Map<String, String> requestCache = new ConcurrentHashMap<>();
+
+    public authenticationFilter(AuthenticationManager authenticationManager, jwtUtilities jwtUtilities, ObjectMapper objectMapper, redisService redisService, userLoginHistoryService userLoginHistoryService) {
         super.setFilterProcessesUrl("/auth/login"); // login url  변경하기
         this.authenticationManager = authenticationManager;
         this.jwtUtilities = jwtUtilities;
         this.objectMapper = objectMapper;
         this.redisService = redisService;
+        this.userLoginHistoryService = userLoginHistoryService;
     }
 
     @Override
@@ -46,6 +55,9 @@ public class authenticationFilter extends UsernamePasswordAuthenticationFilter {
 
         try {
             UserLoginRequest userLoginRequest = objectMapper.readValue(request.getInputStream(), UserLoginRequest.class);
+
+            requestCache.put("requestBody", objectMapper.writeValueAsString(userLoginRequest));
+
             String encodedPassword = Base64PasswordEncoder.encode(userLoginRequest.getPassword());
             log.info("User ID: " + userLoginRequest.getUserId());
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userLoginRequest.getUserId(), encodedPassword);
@@ -63,6 +75,12 @@ public class authenticationFilter extends UsernamePasswordAuthenticationFilter {
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response,
                                             FilterChain filterChain, Authentication authentication) throws  IOException{
         log.info("Authentication Success");
+
+        String requestLogin = requestCache.get("requestBody");
+        UserLoginRequest userLoginRequest = objectMapper.readValue(requestLogin, UserLoginRequest.class);
+
+        this.userLoginHistoryService.saveLoginHistory(userLoginRequest, request);
+
         principalDetails principalDetails = (principalDetails) authentication.getPrincipal();
         tokenDto newToken = jwtUtilities.generateToken(authentication);
 
