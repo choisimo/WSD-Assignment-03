@@ -28,7 +28,8 @@ public class Application {
     @Builder.Default
     @JsonSerialize(using = LocalDateTimeSerializer.class)
     @JsonDeserialize(using = LocalDateTimeDeserializer.class)
-    @Column(name = "`applied_at`", nullable = false)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
+    @Column(name = "applied_at", nullable = false)
     private LocalDateTime appliedAt = LocalDateTime.now(); // 지원 날짜
 
     @ManyToOne(fetch = FetchType.LAZY)

@@ -7,6 +7,7 @@ import com.nodove.WSD_Assignment_03.dto.Crawler.BookMark.BookmarkSearchRequestDt
 import com.nodove.WSD_Assignment_03.service.bookMarkService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -95,7 +96,8 @@ public class bookmarksController {
             @ApiResponse(responseCode = "500", description = "Failed to add or delete bookmark")
     })
     @PostMapping("/bookmarks")
-    public ResponseEntity<?> addOrDeleteBookmarks(@AuthenticationPrincipal principalDetails principalDeatails, BookmarkDto bookmarkDto) {
+    public ResponseEntity<?> addOrDeleteBookmarks(@AuthenticationPrincipal principalDetails principalDeatails,
+                                                  @RequestBody(description = "") BookmarkDto bookmarkDto) {
         return bookMarkService.addOrDeleteBookmarks(principalDeatails, bookmarkDto);
     }
 
