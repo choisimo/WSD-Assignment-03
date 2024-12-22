@@ -2,6 +2,8 @@ package com.nodove.WSD_Assignment_03.service;
 
 import com.nodove.WSD_Assignment_03.configuration.token.principalDetails.principalDetails;
 import com.nodove.WSD_Assignment_03.domain.SaramIn.*;
+import com.nodove.WSD_Assignment_03.domain.users;
+import com.nodove.WSD_Assignment_03.dto.ApiResponse.ApiResponseDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.JobPostingRequestDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.JobPostingUpdateDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.JobPostingsDto;
@@ -11,7 +13,9 @@ import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.JobPosting.JobP
 import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.JobPosting.SectorRepository;
 import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.JobPosting.userViewPageRepository;
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +41,7 @@ public class jobsService {
     private final userViewPageRepository userViewPageRepository;
     private final JobPostingSectorRepository jobPostingSectorRepository;
     private final SectorRepository sectorRepository;
+    private final com.nodove.WSD_Assignment_03.repository.usersRepository usersRepository;
 
     @Transactional
     public void createJobPosting(JobPostingsDto jobPostingsDto) {
@@ -63,12 +68,20 @@ public class jobsService {
     public ResponseEntity<?> updateJobPosting(principalDetails principalDetails, JobPostingUpdateDto jobPostingsUpdateDto) {
         if (principalDetails == null) {
             log.error("there is no principalDetails");
-            return ResponseEntity.status(401).body("Unauthorized");
+            return ResponseEntity.status(401).body(ApiResponseDto.<Void>builder()
+                    .status("error")
+                    .message("Unauthorized")
+                    .code("UNAUTHORIZED")
+                    .build());
         }
 
         if (principalDetails.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
             log.error("You are not authorized to update this job posting [ADMIN ONLY]");
-            return ResponseEntity.status(401).body("Unauthorized");
+            return ResponseEntity.status(401).body(ApiResponseDto.<Void>builder()
+                    .status("error")
+                    .message("role is not admin")
+                    .code("UNAUTHORIZED")
+                    .build());
         }
 
         // 현재 공고 등록 되어있는지 확인하기 위해 id로 조회
@@ -105,13 +118,21 @@ public class jobsService {
 
         jobPostingRepository.save(updatedJobPosting);
         // 변경 내역 body에 담아 반환 (기존 내역과 비교해서 변경된 내역들만)
-        return ResponseEntity.status(200).body(updatedJobPosting + " updated successfully");
+        return ResponseEntity.status(200).body(ApiResponseDto.<JobPostingsDto>builder()
+                .status("success")
+                .message("Job Posting Updated")
+                .code("JOB_POSTING_UPDATED")
+                .data(convertToDto(updatedJobPosting))
+                .build());
     }
 
 
     @Transactional
     public Page<JobPostingsDto> getJobListings(JobPostingRequestDto requestDto) {
         QJobPosting qJobPosting = QJobPosting.jobPosting;
+        QJobPosting_Sector qJobPostingSector = QJobPosting_Sector.jobPosting_Sector;
+        QSector qSector = QSector.sector;
+
         BooleanBuilder builder = new BooleanBuilder();
 
         if (requestDto.getLocation() != null)
@@ -124,10 +145,16 @@ public class jobsService {
             builder.and(qJobPosting.company.name.containsIgnoreCase(requestDto.getCompanyName()));
         if (requestDto.getEmploymentType() != null)
             builder.and(qJobPosting.employmentType.containsIgnoreCase(requestDto.getEmploymentType()));
-/*
-        if (requestDto.getSector() != null)
-            builder.and(qJobPosting.sector.containsIgnoreCase(requestDto.getSector()));
-*/
+        // 섹터 조건 추가
+        if (requestDto.getSector() != null) {
+            builder.and(qJobPosting.id.in(
+                    JPAExpressions.select(qJobPostingSector.jobPosting.id)
+                            .from(qJobPostingSector)
+                            .join(qJobPostingSector.sector, qSector)
+                            .where(qSector.name.containsIgnoreCase(requestDto.getSector()))
+            ));
+        }
+
         if (requestDto.getDeadline() != null)
             builder.and(qJobPosting.deadline.eq(requestDto.getDeadline()));
 
@@ -142,9 +169,8 @@ public class jobsService {
                             .or(qJobPosting.experience.containsIgnoreCase(requestDto.getKeyword()))
                             .or(qJobPosting.education.containsIgnoreCase(requestDto.getKeyword()))
                             .or(qJobPosting.salary.containsIgnoreCase(requestDto.getKeyword())
-                            /*.or(qJobPosting.sector.containsIgnoreCase(requestDto.getKeyword())))*/
                             .or(qJobPosting.deadline.containsIgnoreCase(requestDto.getKeyword()))
-            );
+            ));
         }
 
 
@@ -199,32 +225,58 @@ public class jobsService {
     }
 
     @Transactional
-    public JobPostingsDto getJobPosting(principalDetails principalDetails, long id, HttpRequest request) {
+    public JobPostingsDto getJobPosting(principalDetails principalDetails, long id, HttpServletRequest request) {
+
+        // 인증된 사용자 확인
+        if (principalDetails == null) {
+            throw new IllegalArgumentException("User is not authenticated");
+        }
+
         // 현재 공고 찾기 및 조회수 증가
         JobPosting jobPosting = jobPostingRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("JobPosting not found"));
         jobPosting.setViewCount(jobPosting.getViewCount() + 1);
         jobPostingRepository.save(jobPosting);
 
+        // 헤더 값 검증
+        String userAgent = request.getHeader("User-Agent");
+        if (userAgent == null) {
+            userAgent = "Unknown";
+        }
+
+        String ipAddress = request.getHeader("X-Forwarded-For");
+        if (ipAddress == null) {
+            ipAddress = request.getRemoteAddr(); // 기본 IP 설정
+        }
+
+        users user = usersRepository.findByUserId(principalDetails.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // 사용자 페이지 조회 기록 생성
         userViewPage updateUserViewPage = userViewPage.builder()
                 .viewedAt(LocalDateTime.now())
-                .user(principalDetails.getUser())
-                .pageUrl(request.getURI().toString())
-                .userAgent(Objects.requireNonNull(request.getHeaders().get("User-Agent")).toString())
-                .ipAddress(Objects.requireNonNull(request.getHeaders().get("X-Forwarded-For")).toString())
+                .user(user)
+                .pageUrl(request.getRequestURI())
+                .userAgent(userAgent)
+                .ipAddress(ipAddress)
                 .build();
 
-        // 사용자 조회 페이지 저장
-        this.userViewPageRepository.save(updateUserViewPage);
+        userViewPageRepository.save(updateUserViewPage);
 
+        // JobPosting → DTO 변환
         return JobPostingsDto.builder()
                 .id(jobPosting.getId())
                 .title(jobPosting.getTitle())
                 .companyName(jobPosting.getCompany().getName())
                 .location(jobPosting.getLocation())
+                .experience(jobPosting.getExperience())
+                .education(jobPosting.getEducation())
                 .employmentType(jobPosting.getEmploymentType())
-                .postedAt(jobPosting.getPostedAt().toString())
+                .salary(jobPosting.getSalary())
+                .deadline(jobPosting.getDeadline())
+                .logo(jobPosting.getLogo())
                 .viewCount(jobPosting.getViewCount())
+                .postedAt(String.valueOf(jobPosting.getPostedAt()))
                 .recommendedJobPostings(getRecommendedJobPostings())
                 .build();
     }

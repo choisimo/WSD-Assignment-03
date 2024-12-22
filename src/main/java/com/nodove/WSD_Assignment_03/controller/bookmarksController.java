@@ -1,6 +1,7 @@
 package com.nodove.WSD_Assignment_03.controller;
 
 import com.nodove.WSD_Assignment_03.configuration.token.principalDetails.principalDetails;
+import com.nodove.WSD_Assignment_03.dto.ApiResponse.ApiResponseDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.BookMark.BookmarkDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.BookMark.BookmarkSearchRequestDto;
 import com.nodove.WSD_Assignment_03.service.bookMarkService;
@@ -32,11 +33,23 @@ public class bookmarksController {
     public ResponseEntity<?> searchBookmarks(@AuthenticationPrincipal principalDetails principalDetails, @RequestParam("pageSize") @DefaultValue("20") int pageSize, @RequestParam("pageNumber") @DefaultValue("1") int pageNumber, @RequestParam("keyword") String keyword, @RequestParam("location") String location, @RequestParam("experience") String experience, @RequestParam("salary") String salary, @RequestParam("sortedBy") @DefaultValue("latest") String sortedBy, @RequestParam("sector") String sector, @RequestParam("note") @DefaultValue("no content") String note) {
         if (principalDetails == null) {
             log.error("principalDetails is null");
-            return ResponseEntity.status(401).body("Unauthorized");
+            return ResponseEntity.status(401).body(
+                    ApiResponseDto.<Void>builder()
+                            .status("error")
+                            .code("Unauthorized")
+                            .message("there is no principalDetails")
+                            .build()
+            );
         }
         if (pageSize == 0 || pageNumber == 0) {
             log.error("pageSize or page is null");
-            return ResponseEntity.status(400).body("pageSize or page cannot be null");
+            return ResponseEntity.status(400).body(
+                    ApiResponseDto.<Void>builder()
+                            .status("error")
+                            .code("Bad Request")
+                            .message("pageSize or page is null")
+                            .build()
+            );
         }
 
         BookmarkSearchRequestDto bookmarkSearchRequestDto = BookmarkSearchRequestDto.builder()
@@ -66,7 +79,13 @@ public class bookmarksController {
     public ResponseEntity<?> addOrDeleteBookmarks(@AuthenticationPrincipal principalDetails principalDeatails, BookmarkDto bookmarkDto) {
         if (principalDeatails == null) {
             log.error("there is no principalDetails");
-            return ResponseEntity.status(401).body("Unauthorized");
+            return ResponseEntity.status(401).body(
+                    ApiResponseDto.<Void>builder()
+                            .status("error")
+                            .code("Unauthorized")
+                            .message("there is no principalDetails")
+                            .build()
+            );
         }
         return bookMarkService.addOrDeleteBookmarks(principalDeatails, bookmarkDto);
     }

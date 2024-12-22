@@ -5,6 +5,7 @@ import com.nodove.WSD_Assignment_03.dto.Crawler.BookMark.BookmarkSearchRequestDt
 
 import java.util.List;
 
+// This interface is used to search user bookmarks.
 public interface BookMarkCustomRepository {
     List<UserBookmark> searchUserBookmarks(Long userId, BookmarkSearchRequestDto requestDto);
 }

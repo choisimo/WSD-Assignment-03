@@ -5,6 +5,7 @@ import com.nodove.WSD_Assignment_03.configuration.token.components.tokenDto;
 import com.nodove.WSD_Assignment_03.configuration.token.jwtUtilities;
 import com.nodove.WSD_Assignment_03.configuration.token.principalDetails.principalDetails;
 import com.nodove.WSD_Assignment_03.configuration.utility.password.Base64PasswordEncoder;
+import com.nodove.WSD_Assignment_03.dto.ApiResponse.ApiResponseDto;
 import com.nodove.WSD_Assignment_03.dto.users.Redis_Refresh;
 import com.nodove.WSD_Assignment_03.dto.users.UserLoginRequest;
 import com.nodove.WSD_Assignment_03.service.redisService;
@@ -64,16 +65,17 @@ public class authenticationFilter extends UsernamePasswordAuthenticationFilter {
             return authenticationManager.authenticate(authenticationToken);
         } catch (AuthenticationException e) {
             log.error("Authentication Failed");
-            throw new RuntimeException(e);
-        }
-        catch (IOException e) {
+            sendErrorResponse(response, "Invalid credentials", "AUTHENTICATION_FAILED", 401);
+            throw e;
+        } catch (IOException e) {
+            sendErrorResponse(response, "Failed to process request", "REQUEST_PARSING_ERROR", 400);
             throw new RuntimeException(e);
         }
     }
 
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response,
-                                            FilterChain filterChain, Authentication authentication) throws  IOException{
+                                            FilterChain filterChain, Authentication authentication) throws IOException {
         log.info("Authentication Success");
 
         String requestLogin = requestCache.get("requestBody");
@@ -95,5 +97,23 @@ public class authenticationFilter extends UsernamePasswordAuthenticationFilter {
 
         // Access Token 을 Header 에 추가
         jwtUtilities.loginResponse(response, newToken, deviceId);
+    }
+
+
+    private void sendErrorResponse(HttpServletResponse response, String message, String code, int status) {
+        try {
+            ApiResponseDto<Void> errorResponse = ApiResponseDto.<Void>builder()
+                    .status("error")
+                    .message(message)
+                    .code(code)
+                    .build();
+
+            response.setStatus(status);
+            response.setContentType("application/json");
+            response.getWriter().write(objectMapper.writeValueAsString(errorResponse));
+            response.getWriter().flush();
+        } catch (IOException e) {
+            log.error("Failed to send error response: {}", e.getMessage());
+        }
     }
 }

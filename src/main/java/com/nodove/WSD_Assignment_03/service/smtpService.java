@@ -53,9 +53,9 @@ public class smtpService {
 
     // 회원가입 인증 메일 전송
     @Transactional
-    public String sendJoinMail(emailRequest request) {
+    public boolean sendJoinMail(emailRequest request) {
 
-        if (checkEmailExists(request)) return null; // 이메일 중복 확인
+        if (checkEmailExists(request)) return false; // 이메일 중복 확인
         String uuid = UUIDGenerator(); // 인증번호 생성
         String subject = "회원가입 인증 메일입니다.";
         String text = "<h1>회원가입 인증번호</h1>" +
@@ -77,8 +77,8 @@ public class smtpService {
             log.info("메일 전송 성공: {}", request.getEmail());
         } catch (MessagingException e) {
             log.error("메일 전송 실패: {}", request.getEmail(), e);
-            return "fail";
+            return false;
         }
-        return uuid;
+        return true;
     }
 }

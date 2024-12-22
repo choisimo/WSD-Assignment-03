@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+// This class is used to search user bookmarks. It implements BookMarkCustomRepository.
 @Repository
 public class BookMarkCustomRepositoryImpl implements BookMarkCustomRepository{
 

@@ -4,6 +4,7 @@ import com.nodove.WSD_Assignment_03.configuration.token.principalDetails.princip
 import com.nodove.WSD_Assignment_03.domain.SaramIn.QJobPosting;
 import com.nodove.WSD_Assignment_03.domain.SaramIn.QUserBookmark;
 import com.nodove.WSD_Assignment_03.domain.SaramIn.UserBookmark;
+import com.nodove.WSD_Assignment_03.dto.ApiResponse.ApiResponseDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.BookMark.BookmarkDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.BookMark.BookmarkResponseDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.BookMark.BookmarkSearchRequestDto;
@@ -39,7 +40,11 @@ public class bookMarkService {
     public ResponseEntity<?> searchBookmarks(BookmarkSearchRequestDto bookmarkSearchRequestDto, principalDetails principalDetails) {
         if (principalDetails == null) {
             log.error("principalDetails is null");
-            return ResponseEntity.status(401).body("Unauthorized");
+            return ResponseEntity.status(401).body(ApiResponseDto.<Void>builder()
+                    .status("error")
+                    .message("Unauthorized")
+                    .code("UNAUTHORIZED")
+                    .build());
         }
 
         // 사용자 ID 조회
@@ -61,7 +66,12 @@ public class bookMarkService {
                         .build())
                 .collect(Collectors.toList());
 
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok().body(ApiResponseDto.<List<BookmarkResponseDto>>builder()
+                .status("success")
+                .message("Bookmarks retrieved successfully")
+                .code("BOOKMARKS_RETRIEVED")
+                .data(response)
+                .build());
     }
 
 
@@ -70,7 +80,11 @@ public class bookMarkService {
         // check if user exists in principalDetails
         if (principalDeatails == null) {
             log.error("principalDetails is null");
-            return ResponseEntity.status(401).body("Unauthorized");
+            return ResponseEntity.status(401).body(ApiResponseDto.<Void>builder()
+                    .status("error")
+                    .message("Unauthorized")
+                    .code("UNAUTHORIZED")
+                    .build());
         }
 
         // check if bookmark exists and delete if it does
@@ -84,6 +98,10 @@ public class bookMarkService {
                                 .build())
                 );
 
-        return ResponseEntity.status(HttpStatus.ACCEPTED).body("Bookmark added or deleted successfully");
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(ApiResponseDto.<Void>builder()
+                .status("success")
+                .message("Bookmark added or deleted successfully")
+                .code("BOOKMARK_ADDED_OR_DELETED")
+                .build());
     }
 }

@@ -1,6 +1,7 @@
 package com.nodove.WSD_Assignment_03.configuration.token.principalDetails;
 
 import com.nodove.WSD_Assignment_03.domain.users;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
@@ -10,6 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.Collections;
 
+@Getter
 @Slf4j
 @RequiredArgsConstructor
 public class principalDetails implements UserDetails {
@@ -38,16 +40,18 @@ public class principalDetails implements UserDetails {
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;
+        return !user.isBlocked();
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
         return true;
     }
+
     @Override
     public boolean isEnabled() {
-        return true;
+        log.info("check if user is deleted : {}", user.isDeleted());
+        return !user.isDeleted();
     }
 
     public String getUserId() {
@@ -58,7 +62,4 @@ public class principalDetails implements UserDetails {
         return user.getNickname();
     }
 
-    public users getUser() {
-        return user;
-    }
 }

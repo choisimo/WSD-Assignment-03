@@ -2,7 +2,9 @@ package com.nodove.WSD_Assignment_03.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nodove.WSD_Assignment_03.configuration.token.jwtUtilities;
+import com.nodove.WSD_Assignment_03.configuration.token.principalDetails.principalDetails;
 import com.nodove.WSD_Assignment_03.constants.securityConstants;
+import com.nodove.WSD_Assignment_03.dto.ApiResponse.ApiResponseDto;
 import com.nodove.WSD_Assignment_03.service.redisService;
 import com.nodove.WSD_Assignment_03.service.usersService;
 import jakarta.servlet.FilterChain;
@@ -93,6 +95,20 @@ public class authorizationFilter extends OncePerRequestFilter {
                 response.getWriter().write("Authentication failed. Token is invalid.");
                 return;
             }
+/*
+            if (authentication.getPrincipal() instanceof principalDetails userDetails) {
+                // upcasting to principalDetails
+                if (userDetails.getUser().isDeleted() || !userDetails.isAccountNonLocked()) {
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.getWriter().write(ApiResponseDto.<Void>builder()
+                            .status("error")
+                            .message("Account is locked or deleted")
+                            .code("ACCOUNT_LOCKED_OR_DELETED")
+                            .build().toString());
+                    return;
+                }
+            }*/
+
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }  catch (Exception e) {
             log.error("Error occurred while extracting token from header: " + e.getMessage());

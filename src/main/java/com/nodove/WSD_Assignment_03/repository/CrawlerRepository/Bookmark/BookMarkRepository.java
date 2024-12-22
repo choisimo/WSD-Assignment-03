@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+// default JpaRepository interface for UserBookmark
 public interface BookMarkRepository extends JpaRepository<UserBookmark, Long>, BookMarkCustomRepository{
 
     Optional<UserBookmark> findByUserAndJobPostingId(users user, Long jobPostingId);

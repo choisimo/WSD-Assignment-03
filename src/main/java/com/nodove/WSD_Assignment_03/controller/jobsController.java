@@ -2,6 +2,7 @@ package com.nodove.WSD_Assignment_03.controller;
 
 import com.nodove.WSD_Assignment_03.Crawler.customSearchingCrawler;
 import com.nodove.WSD_Assignment_03.configuration.token.principalDetails.principalDetails;
+import com.nodove.WSD_Assignment_03.dto.ApiResponse.ApiResponseDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.JobPostingRequestDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.JobPostingUpdateDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.JobPostingsDto;
@@ -12,6 +13,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -37,10 +39,18 @@ public class jobsController {
     @PostMapping
     public ResponseEntity<?> createJobPosting(@AuthenticationPrincipal principalDetails principalDetails, @RequestBody JobPostingsDto jobPostingsDto) {
         if (principalDetails == null) {
-            return ResponseEntity.badRequest().body("Unauthorized");
+            return ResponseEntity.badRequest().body(ApiResponseDto.<Void>builder()
+                    .status("error")
+                    .message("Unauthorized")
+                    .code("UNAUTHORIZED")
+                    .build());
         }
         jobService.createJobPosting(jobPostingsDto);
-        return ResponseEntity.ok("Job Posting Created");
+        return ResponseEntity.ok(ApiResponseDto.<Void>builder()
+                .status("success")
+                .message("Job Posting Created")
+                .code("JOB_POSTING_CREATED")
+                .build());
     }
 
 
@@ -105,17 +115,37 @@ public class jobsController {
 
 
         Page<JobPostingsDto> jobListings = jobService.getJobListings(jobPostingRequestDto);
-        return ResponseEntity.ok(jobListings);
+        return ResponseEntity.ok(ApiResponseDto.<Page<JobPostingsDto>>builder()
+                .status("success")
+                .message("Job Postings Retrieved")
+                .data(jobListings)
+                .build());
     }
 
     @Operation(summary = "채용 공고 상세 조회", description = "상세 정보 제공, 조회수 증가, 관련 공고 추천")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Job Posting Retrieved", content = @Content(mediaType = "application/json"))
+            @ApiResponse(responseCode = "200", description = "Job Posting Retrieved", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400", description = "Job Posting not found", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401", description = "Unauthorized", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404", description = "Job Posting not found", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "500", description = "Server Error", content = @Content(mediaType = "application/json"))
     })
     @GetMapping("/{id}")
-    public ResponseEntity<?> getJobPosting(@AuthenticationPrincipal principalDetails principalDetails, @PathVariable long id, HttpRequest request) {
-        JobPostingsDto jobPostDetail = jobService.getJobPosting(principalDetails, id, request);
-        return ResponseEntity.ok(jobPostDetail);
+    public ResponseEntity<?> getJobPosting(@AuthenticationPrincipal principalDetails principalDetails, @PathVariable long id, HttpServletRequest request) {
+        try {
+            JobPostingsDto jobPostDetail = jobService.getJobPosting(principalDetails, id, request);
+            return ResponseEntity.ok(ApiResponseDto.<JobPostingsDto>builder()
+                    .status("success")
+                    .message("Job Posting Retrieved")
+                    .data(jobPostDetail)
+                    .build());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponseDto.<Void>builder()
+                    .status("error")
+                    .message("Job Posting not found")
+                    .code("JOB_POSTING_NOT_FOUND")
+                    .build());
+        }
     }
 
     @Operation(summary = "공고 수정하기", description = "Updates the details of a specific job posting by ID.")
@@ -140,6 +170,10 @@ public class jobsController {
             return ResponseEntity.badRequest().body("Request Data is null");
         }
         customSearchingCrawler.customSearchingCrawling(requestData.getKeywords(), requestData.getTotalPage());
-        return ResponseEntity.ok("Job Crawling Completed");
+        return ResponseEntity.ok(ApiResponseDto.<Void>builder()
+                .status("success")
+                .message("Job Postings Retrieved")
+                .code("JOB_POSTINGS_RETRIEVED")
+                .build());
     }
 }
