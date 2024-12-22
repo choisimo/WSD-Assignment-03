@@ -1,5 +1,10 @@
 package com.nodove.WSD_Assignment_03.domain.SaramIn;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.nodove.WSD_Assignment_03.domain.users;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -21,7 +26,9 @@ public class Application {
     private Long id;
 
     @Builder.Default
-    @JoinColumn(name = "applied_at", nullable = false)
+    @JsonSerialize(using = LocalDateTimeSerializer.class)
+    @JsonDeserialize(using = LocalDateTimeDeserializer.class)
+    @Column(name = "`applied_at`", nullable = false)
     private LocalDateTime appliedAt = LocalDateTime.now(); // 지원 날짜
 
     @ManyToOne(fetch = FetchType.LAZY)

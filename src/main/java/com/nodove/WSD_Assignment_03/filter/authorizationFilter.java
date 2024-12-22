@@ -60,9 +60,15 @@ public class authorizationFilter extends OncePerRequestFilter {
                 log.warn("Access Token is expired. Checking Refresh Token for reissue.");
                 String refreshToken = jwtUtilities.getRefreshToken(request);
                 if (refreshToken == null || jwtUtilities.isTokenExpired(refreshToken, 1)) {
-                    log.error("Refresh Token is invalid or not found. Redirecting to login.");
+                    log.error("Refresh Token is invalid or expired.");
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.getWriter().write("Session expired. Please log in again.");
+                    response.getWriter().write(objectMapper.writeValueAsString(
+                            ApiResponseDto.builder()
+                                    .status("error")
+                                    .message("Refresh Token is invalid or expired. Please log in again.")
+                                    .code("TOKEN_EXPIRED")
+                                    .build()
+                    ));
                     return;
                 }
                 userId = jwtUtilities.parseToken(refreshToken, 1).get("userId").toString();

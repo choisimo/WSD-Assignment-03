@@ -180,15 +180,14 @@ public class jwtUtilities {
 
     // type 0: access token, type 1: refresh token
     public boolean isTokenExpired(String token, int type) {
-        Key key = (type == 0) ? this.key : this.key2;
-
         try {
-            // 토큰 유효성 검사
-            Jwts.parserBuilder()
-                    .setSigningKey(key)
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(type == 0 ? key : key2)
+                    .setAllowedClockSkewSeconds(60) // 60초 허용
                     .build()
-                    .parseClaimsJws(token);
-            return false; // 토큰 유효
+                    .parseClaimsJws(token)
+                    .getBody();
+            return claims.getExpiration().before(new Date());
         } catch (ExpiredJwtException e) {
             log.warn("Token expired: {}", e.getMessage());
             return true; // 토큰 만료

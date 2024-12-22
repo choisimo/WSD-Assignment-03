@@ -4,6 +4,7 @@ import com.nodove.WSD_Assignment_03.configuration.token.principalDetails.princip
 import com.nodove.WSD_Assignment_03.domain.SaramIn.QJobPosting;
 import com.nodove.WSD_Assignment_03.domain.SaramIn.QUserBookmark;
 import com.nodove.WSD_Assignment_03.domain.SaramIn.UserBookmark;
+import com.nodove.WSD_Assignment_03.domain.users;
 import com.nodove.WSD_Assignment_03.dto.ApiResponse.ApiResponseDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.BookMark.BookmarkDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.BookMark.BookmarkResponseDto;
@@ -32,26 +33,19 @@ public class bookMarkService {
 
     private final BookMarkRepository bookMarkRepository;
     private final JobPostingRepository jobPostingRepository;
+    private final com.nodove.WSD_Assignment_03.repository.usersRepository usersRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
 
     @Transactional
     public ResponseEntity<?> searchBookmarks(BookmarkSearchRequestDto bookmarkSearchRequestDto, principalDetails principalDetails) {
-        if (principalDetails == null) {
-            log.error("principalDetails is null");
-            return ResponseEntity.status(401).body(ApiResponseDto.<Void>builder()
-                    .status("error")
-                    .message("Unauthorized")
-                    .code("UNAUTHORIZED")
-                    .build());
-        }
-
         // 사용자 ID 조회
-        Long userId = principalDetails.getUser().getId();
+        users user = usersRepository.findByUserId(principalDetails.getUserId()).orElseThrow(() -> new RuntimeException("User not found"));
 
         // QueryDSL 사용하여 동적 쿼리 실행하기 위해 BookMarkRepository에서 searchUserBookmarks 메소드 호출
-        List<UserBookmark> filteredBookmarks = bookMarkRepository.searchUserBookmarks(userId, bookmarkSearchRequestDto);
+        List<UserBookmark> filteredBookmarks = bookMarkRepository.searchUserBookmarks(user.getId()
+                , bookmarkSearchRequestDto);
 
         // 필터링 된 북마크 리스트를 BookmarkResponseDto로 변환
         List<BookmarkResponseDto> response = filteredBookmarks.stream()
@@ -82,17 +76,19 @@ public class bookMarkService {
             log.error("principalDetails is null");
             return ResponseEntity.status(401).body(ApiResponseDto.<Void>builder()
                     .status("error")
-                    .message("Unauthorized")
+                    .message("principalDetails is null or invalid")
                     .code("UNAUTHORIZED")
                     .build());
         }
 
+        users user = usersRepository.findByUserId(principalDeatails.getUserId()).orElseThrow(() -> new RuntimeException("User not found"));
+
         // check if bookmark exists and delete if it does
-        bookMarkRepository.findByUserAndJobPostingId(principalDeatails.getUser() , bookmarkDto.getJobPostingId())
+        bookMarkRepository.findByUserAndJobPostingId(user , bookmarkDto.getJobPostingId())
                 .ifPresentOrElse(
                         bookMarkRepository::delete,                             // delete bookmark if it exists
                         () -> bookMarkRepository.save(UserBookmark.builder()    // create bookmark if it does not exist
-                                .user(principalDeatails.getUser())
+                                .user(user)
                                 .jobPosting(jobPostingRepository.findById(bookmarkDto.getJobPostingId()).orElseThrow())
                                 .note(bookmarkDto.getNote() != null ? bookmarkDto.getNote() : "no note provided")
                                 .build())

@@ -6,10 +6,14 @@ import com.nodove.WSD_Assignment_03.dto.ApiResponse.ApiResponseDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.ApplicationsDto;
 import com.nodove.WSD_Assignment_03.service.ApplicationsService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.bind.DefaultValue;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -31,11 +35,14 @@ public class applicationsController {
     })
     @GetMapping
     public ResponseEntity<?> getApplcationList(@AuthenticationPrincipal principalDetails principalDetails,
+                                                                                   @Parameter(description = "한 페이지에 표시할 지원 내역 수", example = "20")
                                                @RequestParam("pageSize") @DefaultValue("20") int pageSize,
+                                                                                   @Parameter(description = "페이지 번호", example = "1")
                                                @RequestParam("pageNumber") @DefaultValue("1") int pageNumber,
-                                               @RequestParam("status") @DefaultValue("") StatusEnum status,
-                                               @RequestParam("sortedBy") @DefaultValue("desc") String sortedBy) {
-        if (principalDetails == null) {
+                                                                                   @Parameter(description = "지원 상태 [PENDING, REVIEWING, INTERVIEW, OFFERED, REJECTED, WITHDRAWN]", example = "APPROVED")
+                                               @RequestParam(value = "status", required = false) StatusEnum status,
+                                                                                   @Parameter(description = "정렬 순서 (asc or desc)", example = "desc") @RequestParam(defaultValue = "desc") String sortedBy) {
+    if (principalDetails == null) {
             log.error("there is no principalDetails");
             return ResponseEntity.status(401).body(
                     ApiResponseDto.<Void>builder()
@@ -45,7 +52,7 @@ public class applicationsController {
                             .build()
             );        }
 
-        if (pageSize == 0 || pageNumber == 0) {
+        if (pageSize <= 0 || pageNumber < 0) {
             log.error("pageSize or page is null");
             return ResponseEntity.status(400).body(
                     ApiResponseDto.<Void>builder()
@@ -114,7 +121,10 @@ public class applicationsController {
             @ApiResponse(responseCode = "500", description = "Failed to submit application")
     })
     @PostMapping
-    public ResponseEntity<?> setApplication(@AuthenticationPrincipal principalDetails principalDetails, @RequestBody ApplicationsDto requestDto) {
+    public ResponseEntity<?> setApplication(@AuthenticationPrincipal principalDetails principalDetails,
+                                            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "지원 정보", required = true,
+                                            content = @Content(schema = @Schema(implementation = ApplicationsDto.class)))
+                                            @RequestBody ApplicationsDto requestDto) {
         if (principalDetails == null) {
             log.error("principalDetails is null");
             return ResponseEntity.status(401).body(

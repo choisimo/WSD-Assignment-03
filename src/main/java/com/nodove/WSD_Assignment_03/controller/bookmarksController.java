@@ -6,6 +6,7 @@ import com.nodove.WSD_Assignment_03.dto.Crawler.BookMark.BookmarkDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.BookMark.BookmarkSearchRequestDto;
 import com.nodove.WSD_Assignment_03.service.bookMarkService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +31,25 @@ public class bookmarksController {
             @ApiResponse(responseCode = "400", description = "Bad Request")
     })
     @GetMapping("/bookmarks")
-    public ResponseEntity<?> searchBookmarks(@AuthenticationPrincipal principalDetails principalDetails, @RequestParam("pageSize") @DefaultValue("20") int pageSize, @RequestParam("pageNumber") @DefaultValue("1") int pageNumber, @RequestParam("keyword") String keyword, @RequestParam("location") String location, @RequestParam("experience") String experience, @RequestParam("salary") String salary, @RequestParam("sortedBy") @DefaultValue("latest") String sortedBy, @RequestParam("sector") String sector, @RequestParam("note") @DefaultValue("no content") String note) {
+    public ResponseEntity<?> searchBookmarks(@AuthenticationPrincipal principalDetails principalDetails,
+                                             @Parameter(description = "한 페이지에 표시할 북마크 수", example = "20")
+                                             @RequestParam("pageSize") @DefaultValue("20") int pageSize,
+                                             @Parameter(description = "페이지 번호", example = "1")
+                                             @RequestParam("pageNumber") @DefaultValue("1") int pageNumber,
+                                             @Parameter(description = "검색 키워드", example = "Java")
+                                             @RequestParam("keyword") String keyword,
+                                             @Parameter(description = "지역", example = "Seoul")
+                                             @RequestParam("location") String location,
+                                             @Parameter(description = "경력", example = "3 years")
+                                             @RequestParam("experience") String experience,
+                                             @Parameter(description = "급여", example = "5000")
+                                             @RequestParam("salary") String salary,
+                                             @Parameter(description = "정렬 순서 (latest or oldest)", example = "latest")
+                                             @RequestParam("sortedBy") @DefaultValue("latest") String sortedBy,
+                                             @Parameter(description = "업종", example = "IT")
+                                             @RequestParam("sector") String sector,
+                                             @Parameter(description = "노트", example = "no content")
+                                             @RequestParam("note") @DefaultValue("no content") String note) {
         if (principalDetails == null) {
             log.error("principalDetails is null");
             return ResponseEntity.status(401).body(
@@ -41,7 +60,7 @@ public class bookmarksController {
                             .build()
             );
         }
-        if (pageSize == 0 || pageNumber == 0) {
+        if (pageSize <= 0 || pageNumber < 0) {
             log.error("pageSize or page is null");
             return ResponseEntity.status(400).body(
                     ApiResponseDto.<Void>builder()
@@ -77,16 +96,6 @@ public class bookmarksController {
     })
     @PostMapping("/bookmarks")
     public ResponseEntity<?> addOrDeleteBookmarks(@AuthenticationPrincipal principalDetails principalDeatails, BookmarkDto bookmarkDto) {
-        if (principalDeatails == null) {
-            log.error("there is no principalDetails");
-            return ResponseEntity.status(401).body(
-                    ApiResponseDto.<Void>builder()
-                            .status("error")
-                            .code("Unauthorized")
-                            .message("there is no principalDetails")
-                            .build()
-            );
-        }
         return bookMarkService.addOrDeleteBookmarks(principalDeatails, bookmarkDto);
     }
 
