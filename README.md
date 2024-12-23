@@ -1,6 +1,3 @@
-
----
-
 # WSD Assignment 03
 
 ## 프로젝트 개요
@@ -130,24 +127,53 @@
 - **Database**: MariaDB, Redis
 - **Authentication**: Spring Security with JWT
 - **Documentation**: Swagger UI
+- **Build Tool**: Gradle
 
 ## 프로젝트 구조
 
 ```
-src/
-├── main/
-│   ├── java/com/nodove/WSD_Assignment_03/
-│   │   ├── configuration/     # 보안 및 토큰 설정
-│   │   ├── controller/        # API 엔드포인트 정의
-│   │   ├── domain/            # 엔티티 클래스
-│   │   ├── dto/               # 데이터 전송 객체
-│   │   ├── repository/        # 데이터베이스 접근 레이어
-│   │   ├── service/           # 비즈니스 로직
-│   │   └── filter/            # 요청 필터링
-│   └── resources/
-│       ├── application.yml    # 환경 설정 파일
-│       └── data.sql           # 초기 데이터 로드
-└── test/                      # 테스트 코드
+.
+├── .gradle/                  # Gradle 빌드 도구 설정 및 캐시 파일
+├── .idea/                   # IntelliJ IDEA 설정 파일
+├── build/                   # Gradle 빌드 산출물
+│   ├── classes/             # 컴파일된 클래스 파일
+│   ├── resources/           # 리소스 파일
+│   ├── reports/             # 테스트 리포트
+│   └── tmp/                 # 임시 파일
+├── gradle/                  # Gradle 래퍼 설정 파일
+├── src/
+│   ├── main/                # 메인 소스 코드
+│   │   ├── java/com/nodove/WSD_Assignment_03/
+│   │   │   ├── configuration/  # 설정 관련 코드
+│   │   │   │   ├── QueryDsl/
+│   │   │   │   ├── redis/
+│   │   │   │   ├── security/
+│   │   │   │   ├── smtp/
+│   │   │   │   ├── swagger/
+│   │   │   │   ├── token/
+│   │   │   │   │   ├── components/
+│   │   │   │   │   └── principalDetails/
+│   │   │   │   └── utility/
+│   │   │   │       └── password/
+│   │   │   ├── constants/         # 상수 정의
+│   │   │   ├── controller/        # API 컨트롤러
+│   │   │   ├── domain/            # 엔티티 클래스
+│   │   │   │   └── SaramIn/
+│   │   │   ├── dto/               # DTO 클래스
+│   │   │   │   ├── ApiResponse/
+│   │   │   │   ├── Crawler/
+│   │   │   │   │   ├── BookMark/
+│   │   │   │   │   └── Comment/
+│   │   │   │   └── users/
+│   │   │   ├── filter/            # 필터 클래스
+│   │   │   ├── repository/        # 레포지토리 인터페이스
+│   │   │   │   └── CrawlerRepository/
+│   │   │   │       ├── Bookmark/
+│   │   │   │       └── JobPosting/
+│   │   │   └── service/           # 서비스 레이어
+│   │   └── resources/             # 리소스 파일 (application.yml 등)
+│   └── test/                      # 테스트 코드
+└── build.gradle                   # Gradle 빌드 설정 파일
 ```
 
 ---
@@ -180,7 +206,7 @@ spring:
 ### 3. 애플리케이션 실행
 
 ```bash
-./mvnw spring-boot:run
+./gradlew bootRun
 ```
 
 ### 4. Swagger 문서 접근
@@ -189,4 +215,5 @@ spring:
 - [http://jcloud.nodove.com:10026/swagger-ui/index.html](http://jcloud.nodove.com:10026/swagger-ui/index.html)
 
 ---
+
 
