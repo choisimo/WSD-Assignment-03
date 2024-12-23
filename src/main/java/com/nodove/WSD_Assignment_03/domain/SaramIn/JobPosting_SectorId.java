@@ -1,7 +1,9 @@
 package com.nodove.WSD_Assignment_03.domain.SaramIn;
 
 import jakarta.persistence.Embeddable;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 
 import java.io.Serializable;

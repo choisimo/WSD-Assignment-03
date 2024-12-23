@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -154,11 +155,21 @@ public class jobsController {
             @ApiResponse (responseCode = "400", description = "Unauthorized", content = @Content(mediaType = "application/json")),
             @ApiResponse (responseCode = "404", description = "Job Posting not found", content = @Content(mediaType = "application/json"))
     })
-    @PutMapping
-    public ResponseEntity<?> updateJobPosting(@AuthenticationPrincipal principalDetails principalDetails, @RequestBody JobPostingUpdateDto jobPostingsUpdateDto) {
-        return this.jobService.updateJobPosting(principalDetails, jobPostingsUpdateDto);
-    }
+        @PutMapping
+        public ResponseEntity<?> updateJobPosting(@AuthenticationPrincipal principalDetails principalDetails, @RequestBody @Valid JobPostingUpdateDto jobPostingsUpdateDto) {
+            return this.jobService.updateJobPosting(principalDetails, jobPostingsUpdateDto);
+        }
 
+    @Operation(summary = "공고 삭제하기", description = "Deletes a specific job posting by ID.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Job Posting Deleted", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400", description = "Unauthorized", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404", description = "Job Posting not found", content = @Content(mediaType = "application/json"))
+    })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteJobPosting(@AuthenticationPrincipal principalDetails principalDetails, @PathVariable long id) {
+        return this.jobService.deleteJobPosting(principalDetails, id);
+    }
 
     @Operation(summary = "job Crawler", description = "Crawls job postings from a specific website.")
     @ApiResponses(value = {

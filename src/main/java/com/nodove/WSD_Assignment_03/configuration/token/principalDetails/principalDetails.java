@@ -20,7 +20,8 @@ public class principalDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(new SimpleGrantedAuthority(user.getRole().name()));
+        log.info("getAuthorities from token : {}", user.getRole().getKey());
+        return Collections.singletonList(new SimpleGrantedAuthority(user.getRole().getKey()));
     }
 
     @Override

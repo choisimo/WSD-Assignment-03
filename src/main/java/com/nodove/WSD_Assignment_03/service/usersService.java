@@ -6,6 +6,7 @@ import com.nodove.WSD_Assignment_03.configuration.utility.password.Base64Passwor
 import com.nodove.WSD_Assignment_03.constants.securityConstants;
 import com.nodove.WSD_Assignment_03.domain.Role;
 import com.nodove.WSD_Assignment_03.domain.users;
+import com.nodove.WSD_Assignment_03.dto.ApiResponse.ApiResponseDto;
 import com.nodove.WSD_Assignment_03.dto.users.UserLoginRequest;
 import com.nodove.WSD_Assignment_03.dto.users.UserProfileRequest;
 import com.nodove.WSD_Assignment_03.dto.users.UserRegisterRequest;
@@ -77,7 +78,11 @@ public class usersService {
             if (jwtUtilities.isTokenExpired(refreshToken, 1)) {
                 log.error("Refresh Token is invalid or expired");
                 return ResponseEntity.status(HttpServletResponse.SC_UNAUTHORIZED)
-                        .body("Refresh Token is invalid or expired. Please log in again.");
+                        .body(ApiResponseDto.builder()
+                                .status("error")
+                                .message("Refresh Token is invalid or expired")
+                                .code("TOKEN_EXPIRED")
+                                .build());
             }
 
             String userId = jwtUtilities.parseToken(refreshToken, 1).get("userId").toString();
@@ -94,11 +99,19 @@ public class usersService {
             response.setHeader(securityConstants.TOKEN_HEADER, securityConstants.TOKEN_PREFIX + newAccessToken);
             return ResponseEntity.ok()
                     .header(securityConstants.TOKEN_HEADER, securityConstants.TOKEN_PREFIX + newAccessToken)
-                    .body("Access Token refreshed successfully.");
+                    .body(ApiResponseDto.builder()
+                            .status("success")
+                            .message("Access Token reissued successfully")
+                            .code("TOKEN_REISSUED")
+                            .build());
         } catch (Exception e) {
             log.error("Error refreshing Access Token: {}", e.getMessage());
             return ResponseEntity.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
-                    .body("Failed to refresh Access Token.");
+                    .body(ApiResponseDto.builder()
+                            .status("error")
+                            .message("Failed to reissue Access Token")
+                            .code("TOKEN_REISSUE_FAILED")
+                            .build());
         }
     }
 
@@ -110,37 +123,63 @@ public class usersService {
         // 중복 사용자 체크
         if (isExistsEmail(request.getEmail())) {
             log.error("이미 존재하는 이메일: {}", request.getEmail());
-            return ResponseEntity.badRequest().body("이미 존재하는 이메일입니다.");
+            return ResponseEntity.badRequest().body(ApiResponseDto.builder()
+                    .status("error")
+                    .message("이미 존재하는 이메일입니다.")
+                    .code("EMAIL_EXISTS")
+                    .build());
         }
 
         // 중복 사용자 체크
         if (isUserIdExists(request.getUserId())) {
             log.error("이미 존재하는 사용자 ID: {}", request.getUserId());
-            return ResponseEntity.badRequest().body("이미 존재하는 사용자 ID입니다.");
+            return ResponseEntity.badRequest().body(ApiResponseDto.builder()
+                    .status("error")
+                    .message("이미 존재하는 사용자 ID입니다.")
+                    .code("USER_ID_EXISTS")
+                    .build());
         }
 
         if (isNicknameExists(request.getNickname())) {
             log.error("이미 존재하는 닉네임: {}", request.getNickname());
-            return ResponseEntity.badRequest().body("이미 존재하는 닉네임입니다.");
+            return ResponseEntity.badRequest().body(ApiResponseDto.builder()
+                    .status("error")
+                    .message("이미 존재하는 닉네임입니다.")
+                    .code("NICKNAME_EXISTS")
+                    .build());
         }
 
         // 이메일 인증 코드 확인
         if (request.getEmailVerifyCode() == null) {
             log.error("이메일 인증 코드가 필요합니다.");
-            return ResponseEntity.badRequest().body("이메일 인증 코드가 필요합니다.");
+            return ResponseEntity.badRequest().body(ApiResponseDto.builder()
+                    .status("error")
+                    .message("이메일 인증 코드가 필요합니다.")
+                    .code("EMAIL_VERIFICATION_CODE_REQUIRED")
+                    .build()
+            );
         }
 
         // 이메일 인증 코드 확인
         String verificationCode = this.redisService.getVerificationCode(request.getEmail());
         if (verificationCode == null) {
             log.error("Redis에서 이메일 인증 코드를 찾을 수 없습니다: {}", request.getEmail());
-            return ResponseEntity.badRequest().body("유효하지 않은 이메일 인증 코드입니다. \n " +
-                    "회원가입을 위한 이메일 인증코드가 필요합니다. 먼저 인증 코드 요청을 해주세요.");
+            return ResponseEntity.badRequest().body(ApiResponseDto.builder()
+                    .status("error")
+                    .message("이메일 인증 코드가 만료되었습니다. 다시 시도해주세요.")
+                    .code("EMAIL_VERIFICATION_CODE_EXPIRED")
+                    .build()
+            );
         }
 
         if (!verificationCode.equals(request.getEmailVerifyCode())) {
             log.error("이메일 인증 코드가 일치하지 않습니다.");
-            return ResponseEntity.badRequest().body("이메일 인증 코드가 일치하지 않습니다.");
+            return ResponseEntity.badRequest().body(ApiResponseDto.builder()
+                    .status("error")
+                    .message("이메일 인증 코드가 일치하지 않습니다.")
+                    .code("EMAIL_VERIFICATION_CODE_MISMATCH")
+                    .build()
+            );
         }
 
 
@@ -164,7 +203,11 @@ public class usersService {
         usersRepository.save(newUser);
 
         log.info("회원가입 성공: {}", newUser.getUserId());
-        return ResponseEntity.ok("회원가입 성공");
+        return ResponseEntity.ok(ApiResponseDto.builder()
+                .status("success")
+                .message("회원가입 성공")
+                .code("REGISTER_SUCCESS")
+                .build());
     }
 
 
@@ -181,7 +224,11 @@ public class usersService {
                 emailRequest emailRequest1 = new emailRequest();
                 emailRequest1.setEmail(request.getEmail());
                 if (this.emailService.checkEmailExists(emailRequest1)) {
-                    return ResponseEntity.badRequest().body("이미 존재하는 이메일입니다.");
+                    return ResponseEntity.badRequest().body(ApiResponseDto.builder()
+                            .status("error")
+                            .message("이미 존재하는 이메일입니다.")
+                            .code("EMAIL_EXISTS")
+                            .build());
                 }
 
                 // email 인증 코드 확인
@@ -189,7 +236,11 @@ public class usersService {
                     redisService.deleteVerificationCode(request.getEmail());
                     user.setEmail(request.getEmail());
                 } else {
-                    return ResponseEntity.badRequest().body("이메일 인증 코드가 일치하지 않습니다.");
+                    return ResponseEntity.badRequest().body(ApiResponseDto.builder()
+                            .status("error")
+                            .message("이메일 인증 코드가 일치하지 않습니다.")
+                            .code("EMAIL_VERIFICATION_CODE_MISMATCH")
+                            .build());
                 }
             }
 
@@ -197,7 +248,11 @@ public class usersService {
             // 닉네임 변경 처리
             if (request.getNickname() != null && !request.getNickname().equals(user.getNickname())) {
                 if (isNicknameExists(request.getNickname())) {
-                    return ResponseEntity.badRequest().body("이미 존재하는 닉네임입니다.");
+                    return ResponseEntity.badRequest().body(ApiResponseDto.builder()
+                            .status("error")
+                            .message("이미 존재하는 닉네임입니다.")
+                            .code("NICKNAME_EXISTS")
+                            .build());
                 }
                 user.setNickname(request.getNickname());
             }
@@ -206,12 +261,20 @@ public class usersService {
             if (request.getOriginPassword() != null && request.getNewPassword() != null) {
                 // 기존 비밀번호 확인
                 if (!passwordEncoder.matches(request.getOriginPassword(), user.getPassword())) {
-                    return ResponseEntity.badRequest().body("기존 비밀번호가 일치하지 않습니다.");
+                    return ResponseEntity.badRequest().body(ApiResponseDto.builder()
+                            .status("error")
+                            .message("기존 비밀번호가 일치하지 않습니다.")
+                            .code("PASSWORD_MISMATCH")
+                            .build());
                 }
 
                 // 새 비밀번호가 기존 비밀번호와 동일하지 않은 경우에만 업데이트
                 if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
-                    return ResponseEntity.badRequest().body("새 비밀번호가 기존 비밀번호와 동일합니다.");
+                    return ResponseEntity.badRequest().body(ApiResponseDto.builder()
+                            .status("error")
+                            .message("새 비밀번호가 기존 비밀번호와 동일합니다.")
+                            .code("PASSWORD_SAME")
+                            .build());
                 }
 
                 // 비밀번호 업데이트
@@ -232,13 +295,25 @@ public class usersService {
                 String newAccessToken = jwtUtilities.generateAccessToken(user.getUserId());
                 return ResponseEntity.ok()
                         .header(securityConstants.TOKEN_HEADER, securityConstants.TOKEN_PREFIX + newAccessToken)
-                        .body("프로필 업데이트 성공");
+                        .body(ApiResponseDto.builder()
+                                .status("success")
+                                .message("프로필 업데이트 성공")
+                                .code("PROFILE_UPDATED")
+                                .build());
             }
 
-            return ResponseEntity.ok("프로필 업데이트 성공");
+            return ResponseEntity.ok(ApiResponseDto.builder()
+                    .status("success")
+                    .message("프로필 업데이트 성공")
+                    .code("PROFILE_UPDATED")
+                    .build());
         } catch (Exception e) {
             log.error("프로필 업데이트 실패: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("프로필 업데이트에 실패했습니다.");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponseDto.builder()
+                    .status("error")
+                    .message("프로필 업데이트에 실패했습니다.")
+                    .code("PROFILE_UPDATE_FAILED")
+                    .build());
         }
     }
 
@@ -273,12 +348,24 @@ public class usersService {
         } catch (Exception e) {
             log.error("회원탈퇴 실패: {}", e.getMessage());
             return ResponseEntity.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
-                    .body("회원탈퇴에 실패했습니다.");
+                    .body(ApiResponseDto.builder()
+                            .status("error")
+                            .message("회원탈퇴에 실패했습니다.")
+                            .code("WITHDRAW_FAILED")
+                            .build());
         }
-        return ResponseEntity.ok("회원탈퇴 성공");
+        return ResponseEntity.ok(ApiResponseDto.builder()
+                .status("success")
+                .message("회원탈퇴 성공")
+                .code("WITHDRAW_SUCCESS")
+                .build());
     }
 
     public users getUser(String userId) {
         return usersRepository.findByUserId(userId).orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+    }
+
+    public users getUserById(Long Id) {
+        return usersRepository.findById(Id).orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
     }
 }

@@ -1,6 +1,7 @@
 package com.nodove.WSD_Assignment_03.service;
 
 import com.nodove.WSD_Assignment_03.configuration.token.principalDetails.principalDetails;
+import com.nodove.WSD_Assignment_03.domain.Role;
 import com.nodove.WSD_Assignment_03.domain.SaramIn.*;
 import com.nodove.WSD_Assignment_03.domain.users;
 import com.nodove.WSD_Assignment_03.dto.ApiResponse.ApiResponseDto;
@@ -19,15 +20,16 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.coyote.Response;
 import org.springframework.data.domain.*;
-import org.springframework.http.HttpRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -53,15 +55,22 @@ public class jobsService {
     }
 
 
-    public void deleteJobPosting(principalDetails principalDetails, long id) {
+    public ResponseEntity<?> deleteJobPosting(principalDetails principalDetails, long id) {
         JobPosting jobPosting = jobPostingRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("JobPosting not found"));
+
         if (!principalDetails.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
-            throw new IllegalArgumentException("You are not authorized to delete this job posting [ADMIN ONLY]");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponseDto.builder()
+                    .status("error")
+                    .code("UNAUTHORIZED")
+                    .message("You are not authorized to delete this job posting [ADMIN ONLY]")
+                    .build());
         }
 
         jobPostingSectorRepository.deleteByJobPosting(jobPosting);
         jobPostingRepository.delete(jobPosting);
+        return ResponseEntity.ok().body(ApiResponseDto.builder()
+                .status("success").code("JOB_POSTING_DELETED").message("Job Posting Deleted").build());
     }
 
     @Transactional
@@ -75,11 +84,13 @@ public class jobsService {
                     .build());
         }
 
-        if (principalDetails.getAuthorities().stream().noneMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+        if (principalDetails.getAuthorities().stream().noneMatch(a -> a.getAuthority().matches(String.valueOf(Role.ADMIN.getKey())))) {
             log.error("You are not authorized to update this job posting [ADMIN ONLY]");
+            principalDetails.getAuthorities().forEach(authority -> log.info("Authority: {}", authority.getAuthority()));
+            String requestRole = principalDetails.getAuthorities().toString();
             return ResponseEntity.status(401).body(ApiResponseDto.<Void>builder()
                     .status("error")
-                    .message("role is not admin")
+                    .message("관리자만 수정 가능합니다. 현재 권한: " + requestRole)
                     .code("UNAUTHORIZED")
                     .build());
         }
@@ -101,7 +112,14 @@ public class jobsService {
         }
 
         // 섹터 업데이트
-        updateSectors(jobPosting, jobPostingsUpdateDto.getSector());
+        updateSectors(jobPosting, jobPostingsUpdateDto.getSector() != null
+                ? jobPostingsUpdateDto.getSector()
+                : jobPostingSectorRepository.findJobPosting_SectorsByJobPosting(jobPosting)
+                .stream()
+                .map(sector -> sector.getSector().getName() // sector 이름만 추출
+                ).collect(Collectors.toList())
+        );
+
         // 업데이트
         JobPosting updatedJobPosting = JobPosting.builder()
                 .id(jobPostingsUpdateDto.getId())
@@ -281,6 +299,12 @@ public class jobsService {
                 .build();
     }
 
+
+    @Transactional
+    public JobPosting getJobPostingById(long id) {
+        return jobPostingRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("JobPosting not found"));
+    }
     // 추천 공고 불러오기
     @Transactional
     public List<JobPostingsDto> getRecommendedJobPostings() {
@@ -295,8 +319,11 @@ public class jobsService {
                 .toList();
     }
 
-
+    // todo : 섹터 업데이트 request Long, String 2개 만들어서 변경 없을 시 DB 호출 안하게 하기
     private void updateSectors(JobPosting jobPosting, List<String> sectorNames) {
+        if (sectorNames == null || sectorNames.isEmpty()) {
+            log.info("There's no change in sectors");
+        } else {
         // 기존 섹터 관계 삭제
         jobPostingSectorRepository.deleteByJobPosting(jobPosting);
 
@@ -305,7 +332,10 @@ public class jobsService {
             Sector sector = sectorRepository.findByName(sectorName)
                     .orElseGet(() -> sectorRepository.save(Sector.builder().name(sectorName).build()));
 
+
+            JobPosting_SectorId id = new JobPosting_SectorId(jobPosting.getId(), sector.getId());
             JobPosting_Sector jobPostingSector = JobPosting_Sector.builder()
+                    .id(id)
                     .jobPosting(jobPosting)
                     .sector(sector)
                     .build();
@@ -314,5 +344,6 @@ public class jobsService {
             log.info("Linked Job Posting with Sector: Title={}, Sector={}", jobPosting.getTitle(), sectorName);
         }
     }
+}
 
 }

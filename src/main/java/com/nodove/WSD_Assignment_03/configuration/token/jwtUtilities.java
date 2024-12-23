@@ -5,6 +5,7 @@ import com.nodove.WSD_Assignment_03.configuration.token.components.tokenDto;
 import com.nodove.WSD_Assignment_03.constants.securityConstants;
 import com.nodove.WSD_Assignment_03.domain.Role;
 import com.nodove.WSD_Assignment_03.domain.users;
+import com.nodove.WSD_Assignment_03.dto.ApiResponse.ApiResponseDto;
 import com.nodove.WSD_Assignment_03.repository.usersRepository;
 import com.nodove.WSD_Assignment_03.service.redisService;
 import io.jsonwebtoken.*;
@@ -21,6 +22,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.security.Key;
 import java.util.*;
 
@@ -122,15 +124,26 @@ public class jwtUtilities {
             String nickname = (String) parsedToken.getBody().get("nickname", String.class);
             List<String> roles = parsedToken.getBody().get("role", List.class);
 
-            List<SimpleGrantedAuthority> authorities = roles.stream()
-                    .map(SimpleGrantedAuthority::new)
+            List<Role> roleEnums = roles.stream()
+                    .map(role -> {
+                        String subRole = role.substring(5); // "ROLE_" 제거
+                        try {
+                            log.info("role: {}", subRole);
+                            return Role.valueOf(subRole); // 정확히 매핑되는 경우
+                        } catch (IllegalArgumentException e) {
+                            log.warn("Invalid role: {}. Skipping...", subRole);
+                            return null; // 매핑되지 않는 경우 null 반환
+                        }
+                    })
+                    .filter(Objects::nonNull) // null 제거
                     .toList();
 
             users user = users.builder()
                     .userId(userId)
                     .nickname(nickname)
-                    .role(Role.USER)
+                    .role(roleEnums.get(0)) // 주어진 상황에서는 첫 번째 역할을 선택
                     .build();
+
 
             UserDetails userDetails = new principalDetails(user);
             return new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
@@ -141,13 +154,19 @@ public class jwtUtilities {
     }
 
     // token 전달 시, response에 token을 담아서 전달.
-    public void loginResponse(HttpServletResponse response, tokenDto tokenDto, String deviceId)
-    {
+    public void loginResponse(HttpServletResponse response, tokenDto tokenDto, String deviceId) throws IOException {
+        response.reset(); // response 초기화
         Cookie newCookie = new Cookie("refreshToken", tokenDto.getRefreshToken());
         newCookie.setHttpOnly(false); // TODO : Http-only 으로 수정 | secure 설정
         newCookie.setDomain(null); // TODO : domain 설정  | test 하느라 null 설정함
         newCookie.setPath("/");
         response.addCookie(newCookie);
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.getWriter().write(ApiResponseDto.builder()
+                .code("LOGIN_SUCCESS")
+                .status("success")
+                .message("로그인 성공")
+                .build().toString());
         response.addHeader(securityConstants.TOKEN_HEADER,
                 securityConstants.TOKEN_PREFIX + tokenDto.getAccessToken());
         response.addHeader(securityConstants.DEVICE_ID, deviceId);

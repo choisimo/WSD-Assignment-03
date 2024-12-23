@@ -74,6 +74,14 @@ public class authorizationFilter extends OncePerRequestFilter {
                 userId = jwtUtilities.parseToken(refreshToken, 1).get("userId").toString();
                 token = jwtUtilities.generateAccessToken(userId);
                 tokenChanged = true;
+                response.setStatus(HttpServletResponse.SC_ACCEPTED);
+                response.getWriter().write(objectMapper.writeValueAsString(
+                        ApiResponseDto.builder()
+                                .status("success")
+                                .message("Access Token reissued successfully")
+                                .code("TOKEN_REISSUED")
+                                .build()
+                ));
                 response.setHeader(securityConstants.TOKEN_HEADER, securityConstants.TOKEN_PREFIX + token);
                 log.info("Access Token reissued successfully");
             }
@@ -84,13 +92,23 @@ public class authorizationFilter extends OncePerRequestFilter {
                     redisService.saveBlackList(token);
                 }
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                response.getWriter().write(ApiResponseDto.builder()
+                        .status("error")
+                        .message("blacklisted user")
+                        .code("403")
+                        .build().toString()
+                );
                 return;
             }
 
             if (!tokenChanged && jwtUtilities.isTokenExpired(token, 0)) {
                 log.error("Token is expired");
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("Session expired. Please log in again.");
+                response.getWriter().write(ApiResponseDto.builder()
+                        .code("403")
+                        .message("token is expired")
+                        .status("error")
+                        .build().toString());
                 return;
             }
 
@@ -98,7 +116,11 @@ public class authorizationFilter extends OncePerRequestFilter {
             if (authentication == null) {
                 log.error("Authentication failed for token: {}", token);
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("Authentication failed. Token is invalid.");
+                response.getWriter().write(ApiResponseDto.builder()
+                        .code("403")
+                        .message("Authentication failed")
+                        .status("error")
+                        .build().toString());
                 return;
             }
 /*
@@ -119,6 +141,12 @@ public class authorizationFilter extends OncePerRequestFilter {
         }  catch (Exception e) {
             log.error("Error occurred while extracting token from header: " + e.getMessage());
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.getWriter().write(ApiResponseDto.builder()
+                    .status("error")
+                    .message("Error occurred while extracting token from header due to " + e.getMessage())
+                    .code("403")
+                    .build().toString()
+            );
             return;
         } finally {
             filterChain.doFilter(request, response);

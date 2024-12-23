@@ -7,6 +7,7 @@ import com.nodove.WSD_Assignment_03.domain.SaramIn.JobPosting;
 import com.nodove.WSD_Assignment_03.domain.SaramIn.StatusEnum;
 import com.nodove.WSD_Assignment_03.domain.users;
 import com.nodove.WSD_Assignment_03.dto.ApiResponse.ApiResponseDto;
+import com.nodove.WSD_Assignment_03.dto.ApplicationResponseDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.ApplicationsDto;
 import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.ApplicationRepository;
 import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.JobPosting.JobPostingRepository;
@@ -26,7 +27,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-import static com.nodove.WSD_Assignment_03.domain.SaramIn.QApplication.application;
 
 @Slf4j
 @Service
@@ -80,11 +80,22 @@ public class ApplicationsService {
             } else {
                 applications = applicationRepository.findAll(pageable);
             }
-            return ResponseEntity.ok().body(ApiResponseDto.<Page<Application>>builder()
+
+            Page<ApplicationResponseDto> dtoPage = applications.map(application -> ApplicationResponseDto.builder()
+                    .id(application.getId())
+                    .note(application.getNote())
+                    .appliedAt(application.getAppliedAt())
+                    .userName(application.getUser().getUsername()) // 필요한 데이터만 매핑
+                    .jobTitle(application.getJobPosting().getTitle())
+                    .status(application.getStatus())
+                    .build());
+
+
+            return ResponseEntity.ok().body(ApiResponseDto.<Page<ApplicationResponseDto>>builder()
                     .status("success")
                     .message("Applications retrieved successfully")
                     .code("APPLICATIONS_RETRIEVED")
-                    .data(applications)
+                    .data(dtoPage)
                     .build()
             );
         }

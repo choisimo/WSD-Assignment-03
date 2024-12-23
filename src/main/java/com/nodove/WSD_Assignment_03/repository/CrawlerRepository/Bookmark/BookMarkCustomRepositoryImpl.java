@@ -8,11 +8,15 @@ import com.nodove.WSD_Assignment_03.dto.Crawler.BookMark.BookmarkSearchRequestDt
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.StringPath;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+import static com.nodove.WSD_Assignment_03.domain.Qusers.users;
+
 // This class is used to search user bookmarks. It implements BookMarkCustomRepository.
+
 @Repository
 public class BookMarkCustomRepositoryImpl implements BookMarkCustomRepository{
 
@@ -24,6 +28,7 @@ public class BookMarkCustomRepositoryImpl implements BookMarkCustomRepository{
 
     @Override
     public List<UserBookmark> searchUserBookmarks(Long userId, BookmarkSearchRequestDto requestDto) {
+/*
         QUserBookmark userBookmark = QUserBookmark.userBookmark;
         QJobPosting_Sector jobPostingSector = QJobPosting_Sector.jobPosting_Sector;
         QSector sector = QSector.sector;
@@ -43,6 +48,21 @@ public class BookMarkCustomRepositoryImpl implements BookMarkCustomRepository{
                                 .or(containsKeyword(userBookmark.note, requestDto.getNote()))
                 )
                 .orderBy(userBookmark.bookmarkedAt.desc())
+                .fetch();
+*/
+        return null; // Todo : 왜 만든거지 ㄹㅇㅋㅋ 이거 안쓰는데
+    }
+
+    // Todo : 이름 길게 쓰지마세요 ㅠㅠ 히헤헤ㅏ헤헤헤 JSON 직렬화 박살 왜 남 ㅠㅠ 으어앙엉 ㅠㅠ
+    @Override
+    public List<UserBookmark> searchUserBookmarksWithPagingAndSortingUserByUserOrderByDescInOrderToBookmarkedDate(Pageable pageable) {
+        // Todo : 이건 씀 ㅇㅇ ㅋ 으엉 이게 맞나 ㅠㅠ
+        QUserBookmark userBookmark = QUserBookmark.userBookmark;
+        return jpaQueryFactory.selectFrom(userBookmark)
+                .join(userBookmark.user, users).fetchJoin()
+                .orderBy(users.userId.asc(), userBookmark.bookmarkedAt.desc())
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
                 .fetch();
     }
 

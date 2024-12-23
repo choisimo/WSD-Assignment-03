@@ -1,6 +1,7 @@
 package com.nodove.WSD_Assignment_03.configuration.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nodove.WSD_Assignment_03.configuration.token.jwtUtilities;
 import com.nodove.WSD_Assignment_03.configuration.token.principalDetails.principalDetailsService;
 import com.nodove.WSD_Assignment_03.configuration.utility.password.Base64PasswordEncoder;
@@ -93,7 +94,10 @@ public class securityConfig {
 
     @Bean
     public ObjectMapper objectMapper() {
-        return new ObjectMapper();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+
+        return objectMapper;
     }
 
     // todo : 실배포 시 passwordEncoder 변경 필요

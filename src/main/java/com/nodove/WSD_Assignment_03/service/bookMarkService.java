@@ -1,8 +1,6 @@
 package com.nodove.WSD_Assignment_03.service;
 
 import com.nodove.WSD_Assignment_03.configuration.token.principalDetails.principalDetails;
-import com.nodove.WSD_Assignment_03.domain.SaramIn.QJobPosting;
-import com.nodove.WSD_Assignment_03.domain.SaramIn.QUserBookmark;
 import com.nodove.WSD_Assignment_03.domain.SaramIn.UserBookmark;
 import com.nodove.WSD_Assignment_03.domain.users;
 import com.nodove.WSD_Assignment_03.dto.ApiResponse.ApiResponseDto;
@@ -18,12 +16,14 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -43,29 +43,39 @@ public class bookMarkService {
         // 사용자 ID 조회
         users user = usersRepository.findByUserId(principalDetails.getUserId()).orElseThrow(() -> new RuntimeException("User not found"));
 
-        // QueryDSL 사용하여 동적 쿼리 실행하기 위해 BookMarkRepository에서 searchUserBookmarks 메소드 호출
-        List<UserBookmark> filteredBookmarks = bookMarkRepository.searchUserBookmarks(user.getId()
-                , bookmarkSearchRequestDto);
+        // 관리자 권한 확인하기
+        List<UserBookmark> userBookmarkList = null;
+        if (user.getAuthorities().stream().anyMatch(role -> role.getAuthority().equals("ROLE_ADMIN"))) {
+            log.error("User is an admin");
+            // 관리자는 모든 사용자 북마크 조회 가능 (사용자 별로 정렬)
+            Pageable pageable = Pageable.ofSize(bookmarkSearchRequestDto.getPageSize()).withPage(bookmarkSearchRequestDto.getPageNumber());
 
-        // 필터링 된 북마크 리스트를 BookmarkResponseDto로 변환
-        List<BookmarkResponseDto> response = filteredBookmarks.stream()
-                .map(bookmark -> BookmarkResponseDto.builder()
-                        .jobPostingId(bookmark.getJobPosting().getId())
-                        .title(bookmark.getJobPosting().getTitle())
-                        .companyName(bookmark.getJobPosting().getCompany().getName())
-                        .location(bookmark.getJobPosting().getLocation())
-                        .experience(bookmark.getJobPosting().getExperience())
-                        .salary(bookmark.getJobPosting().getSalary())
-                        .note(bookmark.getNote())
-                        .build())
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok().body(ApiResponseDto.<List<BookmarkResponseDto>>builder()
-                .status("success")
-                .message("Bookmarks retrieved successfully")
-                .code("BOOKMARKS_RETRIEVED")
-                .data(response)
-                .build());
+            userBookmarkList = bookMarkRepository.searchUserBookmarksWithPagingAndSortingUserByUserOrderByDescInOrderToBookmarkedDate(pageable);
+            return ResponseEntity.ok().body(ApiResponseDto.<List<BookmarkResponseDto>>builder()
+                    .status("success")
+                    .message("Bookmarks retrieved successfully")
+                    .code("BOOKMARKS_RETRIEVED")
+                    .data(Objects.requireNonNull(userBookmarkList).stream().map(bookmark -> BookmarkResponseDto.builder()
+                            .jobPostingId(bookmark.getJobPosting().getId())
+                            .note(bookmark.getNote())
+                            .bookmarkedAt(bookmark.getBookmarkedAt())
+                            .build()).collect(Collectors.toList()))
+                    .build());
+        } else {
+            log.error("User is not an admin");
+            // 사용자 별 북마크 조회
+            userBookmarkList = bookMarkRepository.searchUserBookmarks(user.getId(), bookmarkSearchRequestDto);
+            return ResponseEntity.ok().body(ApiResponseDto.<List<BookmarkResponseDto>>builder()
+                    .status("success")
+                    .message("Bookmarks retrieved successfully")
+                    .code("BOOKMARKS_RETRIEVED")
+                    .data(Objects.requireNonNull(userBookmarkList).stream().map(bookmark -> BookmarkResponseDto.builder()
+                            .jobPostingId(bookmark.getJobPosting().getId())
+                            .note(bookmark.getNote())
+                            .bookmarkedAt(bookmark.getBookmarkedAt())
+                            .build()).collect(Collectors.toList()))
+                    .build());
+        }
     }
 
 
@@ -89,7 +99,7 @@ public class bookMarkService {
                         bookMarkRepository::delete,                             // delete bookmark if it exists
                         () -> bookMarkRepository.save(UserBookmark.builder()    // create bookmark if it does not exist
                                 .user(user)
-                                .jobPosting(jobPostingRepository.findById(bookmarkDto.getJobPostingId()).orElseThrow())
+                                .jobPosting(jobPostingRepository.findById(bookmarkDto.getJobPostingId()).orElseThrow(() -> new RuntimeException("Job Posting not found")))
                                 .note(bookmarkDto.getNote() != null ? bookmarkDto.getNote() : "no note provided")
                                 .build())
                 );
