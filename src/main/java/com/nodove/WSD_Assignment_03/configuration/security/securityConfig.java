@@ -84,8 +84,8 @@ public class securityConfig {
             authorize.requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll();
             authorize.requestMatchers("/api/public/**").permitAll();
             authorize.requestMatchers(permitList.toArray(new String[0])).permitAll();
-            authorize.requestMatchers("/api/private/**").hasAnyAuthority("ADMIN");
-            authorize.requestMatchers("/api/protected/**").hasAnyAuthority("USER", "COMPANY", "ADMIN");
+            authorize.requestMatchers("/api/private/**").hasAnyAuthority("ADMIN", "ROLE_ADMIN");
+            authorize.requestMatchers("/api/protected/**").hasAnyAuthority("USER", "COMPANY", "ADMIN", "ROLE_USER", "ROLE_COMPANY", "ROLE_ADMIN");
             authorize.anyRequest().permitAll();
         });
         return http.build();

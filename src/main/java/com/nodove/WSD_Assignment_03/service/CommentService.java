@@ -1,9 +1,9 @@
 package com.nodove.WSD_Assignment_03.service;
 
 import com.nodove.WSD_Assignment_03.domain.SaramIn.Comment;
-import com.nodove.WSD_Assignment_03.dto.Crawler.CommentDto;
+import com.nodove.WSD_Assignment_03.dto.Crawler.Comment.CommentDto;
+import com.nodove.WSD_Assignment_03.dto.Crawler.Comment.CommentWriteDto;
 import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.CommentRepository;
-import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.JobPosting.JobPostingRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,10 +24,10 @@ public class CommentService {
     private final redisService redisService;
 
     @Transactional
-    public void createComment(CommentDto commentDto) {
+    public void createComment(CommentWriteDto commentDto, String userId) {
         Comment comment = Comment.builder()
                 .jobPosting(jobService.getJobPostingById(commentDto.getPostId()))
-                .userId(userService.getUserById(commentDto.getUserId()))
+                .userId(userService.getUser(userId))
                 .content(commentDto.getContent())
                 .build();
         log.info("new comment with id {} created", comment.getId());
@@ -35,15 +35,15 @@ public class CommentService {
     }
 
     @Transactional
-    public List<Comment> getCommentsByPostId(Long postId, Pageable pageable, String sort) {
+    public List<CommentDto> getCommentsByPostId(Long postId, Pageable pageable, String sort) {
         return commentRepository.findByJobPosting(jobService.getJobPostingById(postId), pageable)
                 .stream()
-                .map(comment -> Comment.builder()
+                .map(comment -> CommentDto.builder()
                         .id(comment.getId())
                         .jobPosting(comment.getJobPosting())
-                        .userId(comment.getUserId())
+                        .userName(comment.getUserId().getUsername())
                         .content(comment.getContent())
-                        .createdDate(comment.getCreatedDate())
+                        .createdAt(comment.getCreatedDate())
                         .rating(comment.getRating())
                         .build())
                 .collect(Collectors.toList());
@@ -55,7 +55,7 @@ public class CommentService {
                 .orElseThrow(() -> new IllegalArgumentException("Comment not found for the given post and comment ID."));
         return CommentDto.builder()
                 .postId(comment.getJobPosting().getId())
-                .userId(comment.getUserId().getId())
+                .userName((comment.getUserId().getUsername()))
                 .content(comment.getContent())
                 .createdAt(comment.getCreatedDate())
                 .rating(comment.getRating())

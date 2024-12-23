@@ -4,7 +4,9 @@ import com.nodove.WSD_Assignment_03.configuration.token.principalDetails.princip
 import com.nodove.WSD_Assignment_03.dto.ApiResponse.ApiResponseDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.NotificationDto;
 import com.nodove.WSD_Assignment_03.service.NotificationService;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.coyote.Response;
@@ -46,6 +48,8 @@ public class NotificationController {
                 .build());
     }
 
+    @Operation(summary = "알림 조회", description = "알림을 조회합니다.")
+    @ApiResponse(responseCode = "200", description = "알림 조회 성공", content = @io.swagger.v3.oas.annotations.media.Content(mediaType = "application/json"))
     @GetMapping("/protected/notification/{id}")
     public ResponseEntity<?> getNotificationById(
             @Parameter(description = "알림 ID")
@@ -58,7 +62,8 @@ public class NotificationController {
                 .build());
     }
 
-
+    @Operation(summary = "알림 생성", description = "새 알림을 생성합니다.")
+    @ApiResponse(responseCode = "200", description = "알림 생성 성공", content = @io.swagger.v3.oas.annotations.media.Content(mediaType = "application/json"))
     @PostMapping("/protected/notification")
     public ResponseEntity<?> createNotification(@AuthenticationPrincipal principalDetails principalDetails, NotificationDto notificationDto) {
         notificationDto.setSenderId(principalDetails.getUserId());
@@ -70,6 +75,8 @@ public class NotificationController {
                 .build());
     }
 
+    @Operation(summary = "알림 삭제", description = "알림을 삭제합니다.")
+    @ApiResponse(responseCode = "200", description = "알림 삭제 성공", content = @io.swagger.v3.oas.annotations.media.Content(mediaType = "application/json"))
     @DeleteMapping("/protected/notification/{id}")
     public ResponseEntity<?> deleteNotification(
             @AuthenticationPrincipal principalDetails principalDetails,

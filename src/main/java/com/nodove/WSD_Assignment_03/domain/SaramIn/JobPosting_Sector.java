@@ -16,12 +16,12 @@ public class JobPosting_Sector {
     @EmbeddedId
     private JobPosting_SectorId id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("jobPostingId")
     @JoinColumn(name = "job_posting_id", nullable = false)
     private JobPosting jobPosting;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("sectorId")
     @JoinColumn(name = "sector_id", nullable = false)
     private Sector sector;

@@ -3,7 +3,10 @@ package com.nodove.WSD_Assignment_03.controller;
 import com.nodove.WSD_Assignment_03.configuration.token.principalDetails.principalDetails;
 import com.nodove.WSD_Assignment_03.dto.ApiResponse.ApiResponseDto;
 import com.nodove.WSD_Assignment_03.service.SearchHistoryService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +24,11 @@ public class SearchHistoryController {
 
     private final SearchHistoryService searchHistoryService;
 
+    @Operation(summary = "Search History", description = "Get all search history")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Search History Retrieved", content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400", description = "Unauthorized", content =  @Content(mediaType = "application/json"))
+    })
     @GetMapping("/protected/search-history")
     public ResponseEntity<?> getSearchHistory(@AuthenticationPrincipal principalDetails principalDetails) {
         return ResponseEntity.ok(ApiResponseDto.builder()
@@ -31,6 +39,12 @@ public class SearchHistoryController {
                 .build());
     }
 
+    
+    @Operation(summary = "Search History", description = "Get a search history by id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Search History Retrieved", content =  @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400", description = "Unauthorized", content =  @Content(mediaType = "application/json"))
+    })
     @GetMapping("/protected/search-history/{id}")
     public ResponseEntity<?> getSearchHistoryById(@AuthenticationPrincipal principalDetails principalDetails, Long id) {
         return ResponseEntity.ok(ApiResponseDto.builder()
@@ -41,6 +55,11 @@ public class SearchHistoryController {
                 .build());
     }
 
+    @Operation(summary = "Delete Search History", description = "Delete all search history")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Search History Deleted", content =  @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400", description = "Unauthorized", content =  @Content(mediaType = "application/json"))
+    })
     @DeleteMapping("/protected/search-history")
     public ResponseEntity<?> deleteSearchHistory(@AuthenticationPrincipal principalDetails principalDetails) {
         searchHistoryService.deleteSearchHistory(principalDetails.getUserId());
@@ -51,6 +70,11 @@ public class SearchHistoryController {
                 .build());
     }
 
+    @Operation(summary = "Delete Search History", description = "Delete a search history by id")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Search History Deleted", content =  @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "400", description = "Unauthorized", content =  @Content(mediaType = "application/json"))
+    })
     @DeleteMapping("/protected/search-history/{id}")
     public ResponseEntity<?> deleteSearchHistoryById(@AuthenticationPrincipal principalDetails principalDetails, Long id) {
         searchHistoryService.deleteSearchHistoryById(principalDetails.getUserId(), id);

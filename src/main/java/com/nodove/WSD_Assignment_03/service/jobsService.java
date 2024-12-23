@@ -8,6 +8,7 @@ import com.nodove.WSD_Assignment_03.dto.ApiResponse.ApiResponseDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.JobPostingRequestDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.JobPostingUpdateDto;
 import com.nodove.WSD_Assignment_03.dto.Crawler.JobPostingsDto;
+import com.nodove.WSD_Assignment_03.dto.Crawler.SearchHistoryDto;
 import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.CompanyRepository;
 import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.JobPosting.JobPostingRepository;
 import com.nodove.WSD_Assignment_03.repository.CrawlerRepository.JobPosting.JobPostingSectorRepository;
@@ -44,6 +45,7 @@ public class jobsService {
     private final JobPostingSectorRepository jobPostingSectorRepository;
     private final SectorRepository sectorRepository;
     private final com.nodove.WSD_Assignment_03.repository.usersRepository usersRepository;
+    private final SearchHistoryService searchHistoryService;
 
     @Transactional
     public void createJobPosting(JobPostingsDto jobPostingsDto) {
@@ -281,6 +283,12 @@ public class jobsService {
 
         userViewPageRepository.save(updateUserViewPage);
 
+        searchHistoryService.saveSearchHistory( SearchHistoryDto.builder()
+                .userId(user.getUserId())
+                .searchDate(LocalDateTime.now())
+                .searchKeyword(jobPosting.getTitle())
+                .build()
+       );
         // JobPosting → DTO 변환
         return JobPostingsDto.builder()
                 .id(jobPosting.getId())
